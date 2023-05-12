@@ -267,15 +267,14 @@ class TCNNNerfactoField(Field):
         # appearance
         if self.training:
             embedded_appearance = self.embedding_appearance(camera_indices)
+        elif self.use_average_appearance_embedding:
+            embedded_appearance = torch.ones(
+                (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
+            ) * self.embedding_appearance.mean(dim=0)
         else:
-            if self.use_average_appearance_embedding:
-                embedded_appearance = torch.ones(
-                    (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
-                ) * self.embedding_appearance.mean(dim=0)
-            else:
-                embedded_appearance = torch.zeros(
-                    (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
-                )
+            embedded_appearance = torch.zeros(
+                (*directions.shape[:-1], self.appearance_embedding_dim), device=directions.device
+            )
 
         # transients
         if self.use_transient_embedding and self.training:
@@ -320,7 +319,7 @@ class TCNNNerfactoField(Field):
             dim=-1,
         )
         rgb = self.mlp_head(h).view(*outputs_shape, -1).to(directions)
-        outputs.update({FieldHeadNames.RGB: rgb})
+        outputs[FieldHeadNames.RGB] = rgb
 
         return outputs
 

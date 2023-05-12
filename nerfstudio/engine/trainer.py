@@ -454,7 +454,7 @@ class Trainer:
             writer.put_dict(name="Eval Images Metrics", scalar_dict=metrics_dict, step=step)
             group = "Eval Images"
             for image_name, image in images_dict.items():
-                writer.put_image(name=group + "/" + image_name, image=image, step=step)
+                writer.put_image(name=f"{group}/{image_name}", image=image, step=step)
 
         # all eval images
         if step_check(step, self.config.steps_per_eval_all_images):

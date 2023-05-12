@@ -185,9 +185,7 @@ class TensorDataclass:
     @property
     def size(self) -> int:
         """Returns the number of elements in the tensor dataclass batch dimension."""
-        if len(self._shape) == 0:
-            return 1
-        return int(np.prod(self._shape))
+        return 1 if len(self._shape) == 0 else int(np.prod(self._shape))
 
     @property
     def ndim(self) -> int:

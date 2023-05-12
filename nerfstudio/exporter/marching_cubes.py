@@ -61,9 +61,7 @@ def evaluate_sdf(sdf: Callable, points: TensorType["batch", 3]) -> TensorType["b
     Returns:
         A torch tensor with the SDF values evaluated at the given points.
     """
-    z = []
-    for _, pnts in enumerate(torch.split(points, 100000, dim=0)):
-        z.append(sdf(pnts))
+    z = [sdf(pnts) for pnts in torch.split(points, 100000, dim=0)]
     z = torch.cat(z, axis=0)
     return z
 
@@ -232,7 +230,10 @@ def generate_mesh_with_multires_marching_cubes(
                     ):
                         continue
 
-                if not (np.min(z) > isosurface_threshold or np.max(z) < isosurface_threshold):
+                if (
+                    np.min(z) <= isosurface_threshold
+                    and np.max(z) >= isosurface_threshold
+                ):
                     z = z.astype(np.float32)
                     verts, faces, normals, _ = measure.marching_cubes(
                         volume=z.reshape(crop_n, crop_n, crop_n),

@@ -50,11 +50,10 @@ def polycam_to_json(
         Summary of the conversion.
     """
     use_depth = len(image_filenames) == len(depth_filenames)
-    data = {}
-    data["camera_model"] = CAMERA_MODELS["perspective"].value
-    # Needs to be a string for camera_utils.auto_orient_and_center_poses
-    data["orientation_override"] = "none"
-
+    data = {
+        "camera_model": CAMERA_MODELS["perspective"].value,
+        "orientation_override": "none",
+    }
     frames = []
     skipped_frames = 0
     for i, image_filename in enumerate(image_filenames):
@@ -63,14 +62,15 @@ def polycam_to_json(
         if "blur_score" in frame_json and frame_json["blur_score"] < min_blur_score:
             skipped_frames += 1
             continue
-        frame = {}
-        frame["fl_x"] = frame_json["fx"]
-        frame["fl_y"] = frame_json["fy"]
-        frame["cx"] = frame_json["cx"] - crop_border_pixels
-        frame["cy"] = frame_json["cy"] - crop_border_pixels
-        frame["w"] = frame_json["width"] - crop_border_pixels * 2
-        frame["h"] = frame_json["height"] - crop_border_pixels * 2
-        frame["file_path"] = f"./images/frame_{i+1:05d}{image_filename.suffix}"
+        frame = {
+            "fl_x": frame_json["fx"],
+            "fl_y": frame_json["fy"],
+            "cx": frame_json["cx"] - crop_border_pixels,
+            "cy": frame_json["cy"] - crop_border_pixels,
+            "w": frame_json["width"] - crop_border_pixels * 2,
+            "h": frame_json["height"] - crop_border_pixels * 2,
+            "file_path": f"./images/frame_{i + 1:05d}{image_filename.suffix}",
+        }
         if use_depth:
             frame["depth_file_path"] = f"./depth/frame_{i+1:05d}{depth_filenames[i].suffix}"
         # Transform matrix to nerfstudio format. Please refer to the documentation for coordinate system conventions.
@@ -137,13 +137,17 @@ def process_images(
     )
     num_frames = len(copied_image_paths)
 
-    copied_image_paths = [Path("images/" + copied_image_path.name) for copied_image_path in copied_image_paths]
+    copied_image_paths = [
+        Path(f"images/{copied_image_path.name}")
+        for copied_image_path in copied_image_paths
+    ]
 
     if max_dataset_size > 0 and num_frames != num_orig_images:
-        summary_log.append(f"Started with {num_frames} images out of {num_orig_images} total")
-        summary_log.append(
-            "To change the size of the dataset add the argument --max_dataset_size to larger than the "
-            f"current value ({max_dataset_size}), or -1 to use all images."
+        summary_log.extend(
+            (
+                f"Started with {num_frames} images out of {num_orig_images} total",
+                f"To change the size of the dataset add the argument --max_dataset_size to larger than the current value ({max_dataset_size}), or -1 to use all images.",
+            )
         )
     else:
         summary_log.append(f"Started with {num_frames} images")
@@ -206,10 +210,11 @@ def process_depth_maps(
         )
 
     if crop_border_pixels > 0 and num_processed_depth_maps != num_orig_depth_maps:
-        summary_log.append(f"Started with {num_processed_depth_maps} images out of {num_orig_depth_maps} total")
-        summary_log.append(
-            "To change the size of the dataset add the argument --max_dataset_size to larger than the "
-            f"current value ({crop_border_pixels}), or -1 to use all images."
+        summary_log.extend(
+            (
+                f"Started with {num_processed_depth_maps} images out of {num_orig_depth_maps} total",
+                f"To change the size of the dataset add the argument --max_dataset_size to larger than the current value ({crop_border_pixels}), or -1 to use all images.",
+            )
         )
     else:
         summary_log.append(f"Started with {num_processed_depth_maps} images")

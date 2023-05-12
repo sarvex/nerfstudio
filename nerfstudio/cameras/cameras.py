@@ -302,13 +302,11 @@ class Cameras(TensorDataclass):
         if index is None:
             image_height = torch.max(self.image_height.view(-1))
             image_width = torch.max(self.image_width.view(-1))
-            image_coords = torch.meshgrid(torch.arange(image_height), torch.arange(image_width), indexing="ij")
-            image_coords = torch.stack(image_coords, dim=-1) + pixel_offset  # stored as (y, x) coordinates
         else:
             image_height = self.image_height[index].item()
             image_width = self.image_width[index].item()
-            image_coords = torch.meshgrid(torch.arange(image_height), torch.arange(image_width), indexing="ij")
-            image_coords = torch.stack(image_coords, dim=-1) + pixel_offset  # stored as (y, x) coordinates
+        image_coords = torch.meshgrid(torch.arange(image_height), torch.arange(image_width), indexing="ij")
+        image_coords = torch.stack(image_coords, dim=-1) + pixel_offset  # stored as (y, x) coordinates
         return image_coords
 
     def generate_rays(  # pylint: disable=too-many-statements
@@ -798,9 +796,9 @@ class Cameras(TensorDataclass):
             scaling_factor = torch.tensor([scaling_factor]).to(self.device).broadcast_to((self.cx.shape))
         elif isinstance(scaling_factor, torch.Tensor) and scaling_factor.shape == self.shape:
             scaling_factor = scaling_factor.unsqueeze(-1)
-        elif isinstance(scaling_factor, torch.Tensor) and scaling_factor.shape == (*self.shape, 1):
-            pass
-        else:
+        elif not isinstance(
+            scaling_factor, torch.Tensor
+        ) or scaling_factor.shape != (*self.shape, 1):
             raise ValueError(
                 f"Scaling factor must be a float, int, or a tensor of shape {self.shape} or {(*self.shape, 1)}."
             )

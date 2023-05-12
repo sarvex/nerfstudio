@@ -101,13 +101,12 @@ class NeuSModel(SurfaceModel):
         )
         bg_transmittance = transmittance[:, -1, :]
 
-        samples_and_field_outputs = {
+        return {
             "ray_samples": ray_samples,
             "field_outputs": field_outputs,
             "weights": weights,
             "bg_transmittance": bg_transmittance,
         }
-        return samples_and_field_outputs
 
     def get_metrics_dict(self, outputs, batch) -> Dict:
         metrics_dict = super().get_metrics_dict(outputs, batch)

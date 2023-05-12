@@ -61,16 +61,13 @@ class CreateJSONCameraPath(bpy.types.Operator):
                     # sensor fit is either vertical or auto
                     nerfstudio_fov = self.cam_obj.data.angle
 
+            elif self.cam_obj.data.sensor_fit == "VERTICAL":
+                nerfstudio_fov = self.cam_obj.data.angle
             else:
-                # landscape orientation
-
-                if self.cam_obj.data.sensor_fit == "VERTICAL":
-                    nerfstudio_fov = self.cam_obj.data.angle
-                else:
-                    # sensor fit is either horizontal or auto
-                    # convert horizontal fov to vertical fov with aspect ratio
-                    cam_aspect_ratio = bpy.context.scene.render.resolution_y / bpy.context.scene.render.resolution_x
-                    nerfstudio_fov = 2 * atan(tan(self.cam_obj.data.angle / 2.0) * cam_aspect_ratio)
+                # sensor fit is either horizontal or auto
+                # convert horizontal fov to vertical fov with aspect ratio
+                cam_aspect_ratio = bpy.context.scene.render.resolution_y / bpy.context.scene.render.resolution_x
+                nerfstudio_fov = 2 * atan(tan(self.cam_obj.data.angle / 2.0) * cam_aspect_ratio)
 
             self.fov_list += [degrees(nerfstudio_fov)]
             curr_frame += bpy.context.scene.frame_step
@@ -84,15 +81,23 @@ class CreateJSONCameraPath(bpy.types.Operator):
         for i, org_cam_path_mat_val in enumerate(org_camera_path_mat):
             self.transformed_camera_path_mat += [nerf_mesh_mat_list[i].inverted() @ org_cam_path_mat_val]
 
-    def get_list_from_matrix_path(self, input_mat):  # pylint: disable=no-self-use
+    def get_list_from_matrix_path(self, input_mat):    # pylint: disable=no-self-use
         """Flatten matrix to list for camera path."""
-        full_arr = list(input_mat.row[0]) + list(input_mat.row[1]) + list(input_mat.row[2]) + list(input_mat.row[3])
-        return full_arr
+        return (
+            list(input_mat.row[0])
+            + list(input_mat.row[1])
+            + list(input_mat.row[2])
+            + list(input_mat.row[3])
+        )
 
-    def get_list_from_matrix_keyframe(self, input_mat):  # pylint: disable=no-self-use
+    def get_list_from_matrix_keyframe(self, input_mat):    # pylint: disable=no-self-use
         """Flatten matrix to list for keyframes."""
-        full_arr = list(input_mat.col[0]) + list(input_mat.col[1]) + list(input_mat.col[2]) + list(input_mat.col[3])
-        return full_arr
+        return (
+            list(input_mat.col[0])
+            + list(input_mat.col[1])
+            + list(input_mat.col[2])
+            + list(input_mat.col[3])
+        )
 
     def construct_json_obj(self):
         """Get fields for JSON camera path."""
@@ -123,7 +128,6 @@ class CreateJSONCameraPath(bpy.types.Operator):
                 ((bpy.context.scene.frame_end - bpy.context.scene.frame_start) // (bpy.context.scene.frame_step) + 1)
             ) / render_fps
 
-        smoothness_value = 0
         is_cycle = False
 
         # construct camera path
@@ -142,15 +146,7 @@ class CreateJSONCameraPath(bpy.types.Operator):
 
         for i, transformed_camera_path_mat_val in enumerate(self.transformed_camera_path_mat):
 
-            curr_properties = (
-                '[["FOV",'
-                + str(self.fov_list[i])
-                + '],["NAME","Camera '
-                + str(i)
-                + '"],["TIME",'
-                + str(i / render_fps)
-                + "]]"
-            )
+            curr_properties = f'[["FOV",{str(self.fov_list[i])}],["NAME","Camera {str(i)}"],["TIME",{str(i / render_fps)}]]'
 
             keyframe_elem = {
                 "matrix": str(self.get_list_from_matrix_keyframe(self.transformed_camera_path_mat[i])),
@@ -160,6 +156,7 @@ class CreateJSONCameraPath(bpy.types.Operator):
             }
             keyframe_list += [keyframe_elem]
 
+        smoothness_value = 0
         overall_json = {
             "keyframes": keyframe_list,
             "camera_type": cam_type,
@@ -177,7 +174,9 @@ class CreateJSONCameraPath(bpy.types.Operator):
     def write_json_to_file(self):
         """Write the JSON object to a new file."""
 
-        full_abs_file_path = bpy.path.abspath(self.file_path_json + "camera_path_blender.json")
+        full_abs_file_path = bpy.path.abspath(
+            f"{self.file_path_json}camera_path_blender.json"
+        )
         with open(full_abs_file_path, "w", encoding="utf8") as output_json_camera_path:
             output_json_camera_path.truncate(0)
             output_json_camera_path.write(self.complete_json_obj)
@@ -237,20 +236,24 @@ class ReadJSONinputCameraPath(bpy.types.Operator):
         self.fov_list = []
         self.transformed_camera_path_mat = []
 
-        keyframe_counter = 0
         for cam_keyframe in json_cam_path:
             cam_to_world = cam_keyframe["camera_to_world"]
 
             # convert cam_to_world to 4x4 matrix
-            orig_cam_mat = Matrix([cam_to_world[0:4], cam_to_world[4:8], cam_to_world[8:12], cam_to_world[12:]])
+            orig_cam_mat = Matrix(
+                [
+                    cam_to_world[:4],
+                    cam_to_world[4:8],
+                    cam_to_world[8:12],
+                    cam_to_world[12:],
+                ]
+            )
 
             # matrix transformation based on the nerf mesh to find relative camera positions
             self.transformed_camera_path_mat += [self.nerf_bg_mesh.matrix_world.copy() @ orig_cam_mat]
 
             # record fov
             self.fov_list += [cam_keyframe["fov"]]
-
-            keyframe_counter += 1
 
     def generate_camera(self):
         """Create a new camera with the animation (position and fov) and the corresponding type."""
@@ -262,8 +265,7 @@ class ReadJSONinputCameraPath(bpy.types.Operator):
         nerfstudio_camera_object = bpy.data.objects.new("NerfstudioCamera", camera_data)
         bpy.context.scene.collection.objects.link(nerfstudio_camera_object)
 
-        curr_frame = 0
-        while curr_frame < len(json_cam_path):
+        for curr_frame in range(len(json_cam_path)):
             actual_frame = curr_frame + 1
             # animate camera transform
             nerfstudio_camera_object.matrix_world = self.transformed_camera_path_mat[curr_frame]
@@ -281,19 +283,17 @@ class ReadJSONinputCameraPath(bpy.types.Operator):
             # set keyframe for focal length
             nerfstudio_camera_object.data.keyframe_insert(data_path="lens", frame=actual_frame)
 
-            curr_frame += 1
-
         # set camera attributes
         input_cam_type = self.input_json["camera_type"]
-        if input_cam_type == "perspective":
-            nerfstudio_camera_object.data.type = "PERSP"
         if input_cam_type == "equirectangular":
             nerfstudio_camera_object.data.type = "PANO"
             bpy.context.scene.render.engine = "CYCLES"
             nerfstudio_camera_object.data.cycles.panorama_type = "EQUIRECTANGULAR"
-        if input_cam_type == "fisheye":
+        elif input_cam_type == "fisheye":
             nerfstudio_camera_object.data.type = "PERSP"
             self.report({"WARNING"}, "Nerfstudio Add-on Warning: Fisheye cameras are not supported")
+        elif input_cam_type == "perspective":
+            nerfstudio_camera_object.data.type = "PERSP"
 
     def execute(self, context):
         """Execute Blender camera creation process."""

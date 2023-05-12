@@ -333,7 +333,7 @@ class TemporalGridEncoder(nn.Module):
             xyz: input coords, should be in [0,1]
             time: input time, should be in [0,1] with shape [bs, 1]
         """
-        outputs = TemporalGridEncodeFunc.apply(
+        return TemporalGridEncodeFunc.apply(
             xyz,
             self.get_temporal_index(time[:, 0].float()),
             self.embeddings,
@@ -344,7 +344,6 @@ class TemporalGridEncoder(nn.Module):
             self.gridtype_id,
             self.align_corners,
         )
-        return outputs
 
     def get_temporal_tv_loss(self) -> TensorType[()]:
         """Apply TV loss on the temporal channels.

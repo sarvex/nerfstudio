@@ -24,7 +24,7 @@ def random_quaternion(num_poses: int):
     Generates random rotation quatenion.
     """
     u, v, w = np.random.uniform(size=(3, num_poses))
-    quaternion = np.stack(
+    return np.stack(
         (
             np.sqrt(1 - u) * np.sin(2 * np.pi * v),
             np.sqrt(1 - u) * np.cos(2 * np.pi * v),
@@ -33,7 +33,6 @@ def random_quaternion(num_poses: int):
         ),
         -1,
     )
-    return quaternion
 
 
 def test_process_images_skip_colmap(tmp_path: Path):

@@ -146,11 +146,12 @@ class Sitcoms3D(DataParser):
         )
         cameras.rescale_output_resolution(scaling_factor=1.0 / self.config.downscale_factor)
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
-            metadata={"semantics": semantics} if self.config.include_semantics else {},
+            metadata={"semantics": semantics}
+            if self.config.include_semantics
+            else {},
             dataparser_scale=scale,
         )
-        return dataparser_outputs

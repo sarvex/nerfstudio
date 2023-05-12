@@ -89,9 +89,7 @@ class InstantNGP(DataParser):
                 poses.append(np.array(frame["transform_matrix"]))
         if num_skipped_image_filenames >= 0:
             CONSOLE.print(f"Skipping {num_skipped_image_filenames} files in dataset split {split}.")
-        assert (
-            len(image_filenames) != 0
-        ), """
+        assert image_filenames, """
         No image files found. 
         You should check the file_paths in the transforms.json file to make sure they are correct.
         """
@@ -139,15 +137,12 @@ class InstantNGP(DataParser):
             camera_type=camera_type,
         )
 
-        # TODO(ethan): add alpha background color
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
             dataparser_scale=self.config.scene_scale,
         )
-
-        return dataparser_outputs
 
     @classmethod
     def get_focal_lengths(cls, meta: Dict) -> Tuple[float, float]:

@@ -346,23 +346,23 @@ class VanillaPipeline(Pipeline):
         metrics_dict_list = []
         num_images = len(self.datamanager.fixed_indices_eval_dataloader)
         with Progress(
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TimeElapsedColumn(),
-            MofNCompleteColumn(),
-            transient=True,
-        ) as progress:
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeElapsedColumn(),
+                MofNCompleteColumn(),
+                transient=True,
+            ) as progress:
             task = progress.add_task("[green]Evaluating all eval images...", total=num_images)
+            fps_str = "fps"
             for camera_ray_bundle, batch in self.datamanager.fixed_indices_eval_dataloader:
                 # time this the following line
                 inner_start = time()
                 height, width = camera_ray_bundle.shape
-                num_rays = height * width
                 outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
                 metrics_dict, _ = self.model.get_image_metrics_and_images(outputs, batch)
                 assert "num_rays_per_sec" not in metrics_dict
+                num_rays = height * width
                 metrics_dict["num_rays_per_sec"] = num_rays / (time() - inner_start)
-                fps_str = "fps"
                 assert fps_str not in metrics_dict
                 metrics_dict[fps_str] = metrics_dict["num_rays_per_sec"] / (height * width)
                 metrics_dict_list.append(metrics_dict)
@@ -395,8 +395,7 @@ class VanillaPipeline(Pipeline):
         """Returns the training callbacks from both the Dataloader and the Model."""
         datamanager_callbacks = self.datamanager.get_training_callbacks(training_callback_attributes)
         model_callbacks = self.model.get_training_callbacks(training_callback_attributes)
-        callbacks = datamanager_callbacks + model_callbacks
-        return callbacks
+        return datamanager_callbacks + model_callbacks
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
         """Get the param groups for the pipeline.

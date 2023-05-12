@@ -107,9 +107,12 @@ class CacheDataloader(DataLoader):
                 res = executor.submit(self.dataset.__getitem__, idx)
                 results.append(res)
 
-            for res in track(results, description="Loading data batch", transient=True):
-                batch_list.append(res.result())
-
+            batch_list.extend(
+                res.result()
+                for res in track(
+                    results, description="Loading data batch", transient=True
+                )
+            )
         return batch_list
 
     def _get_collated_batch(self):

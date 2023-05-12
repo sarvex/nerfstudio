@@ -45,11 +45,10 @@ def realitycapture_to_json(
     Returns:
         Summary of the conversion.
     """
-    data = {}
-    data["camera_model"] = CAMERA_MODELS["perspective"].value
-    # Needs to be a string for camera_utils.auto_orient_and_center_poses
-    data["orientation_override"] = "none"
-
+    data = {
+        "camera_model": CAMERA_MODELS["perspective"].value,
+        "orientation_override": "none",
+    }
     frames = []
 
     with open(csv_filename, encoding="UTF-8") as file:
@@ -69,12 +68,13 @@ def realitycapture_to_json(
             missing_image_data += 1
             continue
 
-        frame = {}
         img = np.array(Image.open(output_dir / image_filename_map[basename]))
         height, width, _ = img.shape
-        frame["h"] = int(height)
-        frame["w"] = int(width)
-        frame["file_path"] = image_filename_map[basename].as_posix()
+        frame = {
+            "h": int(height),
+            "w": int(width),
+            "file_path": image_filename_map[basename].as_posix(),
+        }
         frame["fl_x"] = float(cameras["f"][i]) * max(width, height) / 36
         frame["fl_y"] = float(cameras["f"][i]) * max(width, height) / 36
         # TODO: Unclear how to get the principal point from RealityCapture, here a guess...

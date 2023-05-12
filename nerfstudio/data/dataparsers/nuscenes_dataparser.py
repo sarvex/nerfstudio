@@ -89,7 +89,7 @@ class NuScenes(DataParser):
         # pylint: disable=too-many-statements
 
         nusc = NuScenesDatabase(version=self.config.version, dataroot=self.config.data_dir, verbose=self.config.verbose)
-        cameras = ["CAM_" + camera for camera in self.config.cameras]
+        cameras = [f"CAM_{camera}" for camera in self.config.cameras]
 
         assert (
             len(cameras) == 1
@@ -209,10 +209,11 @@ class NuScenes(DataParser):
             camera_type=CameraType.PERSPECTIVE,
         )
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
-            mask_filenames=mask_filenames if self.config.mask_dir is not None else None,
+            mask_filenames=mask_filenames
+            if self.config.mask_dir is not None
+            else None,
         )
-        return dataparser_outputs

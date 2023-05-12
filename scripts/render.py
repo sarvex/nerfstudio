@@ -68,7 +68,7 @@ def _render_trajectory_video(
         output_format: How to save output data.
         camera_type: Camera projection format type.
     """
-    CONSOLE.print("[bold green]Creating trajectory " + output_format)
+    CONSOLE.print(f"[bold green]Creating trajectory {output_format}")
     cameras.rescale_output_resolution(rendered_resolution_scaling_factor)
     cameras = cameras.to(pipeline.device)
     fps = len(cameras) / seconds
@@ -143,9 +143,8 @@ def _render_trajectory_video(
                         )
                     writer.add_image(render_image)
 
-    if output_format == "video":
-        if camera_type == CameraType.EQUIRECTANGULAR:
-            insert_spherical_metadata_into_file(output_filename)
+    if output_format == "video" and camera_type == CameraType.EQUIRECTANGULAR:
+        insert_spherical_metadata_into_file(output_filename)
 
 
 def insert_spherical_metadata_into_file(
@@ -304,14 +303,14 @@ class RenderTrajectory:
             with open(self.camera_path_filename, "r", encoding="utf-8") as f:
                 camera_path = json.load(f)
             seconds = camera_path["seconds"]
-            if "camera_type" not in camera_path:
+            if "camera_type" not in camera_path or camera_path[
+                "camera_type"
+            ] not in ["fisheye", "equirectangular"]:
                 camera_type = CameraType.PERSPECTIVE
             elif camera_path["camera_type"] == "fisheye":
                 camera_type = CameraType.FISHEYE
-            elif camera_path["camera_type"] == "equirectangular":
-                camera_type = CameraType.EQUIRECTANGULAR
             else:
-                camera_type = CameraType.PERSPECTIVE
+                camera_type = CameraType.EQUIRECTANGULAR
             crop_data = get_crop_from_json(camera_path)
             camera_path = get_path_from_json(camera_path)
         elif self.traj == "interpolate":

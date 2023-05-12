@@ -175,7 +175,7 @@ def launch(
             CONSOLE.print(traceback.format_exc())
         finally:
             profiler.flush_profiler(config.logging)
-    elif world_size > 1:
+    else:
         # Using multiple gpus with multiple processes.
         if dist_url == "auto":
             assert num_machines == 1, "dist_url=auto is not supported for multi-machine jobs."

@@ -15,10 +15,7 @@ test_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def _swap_minmax(x, y):
-    if x < y:
-        return x, y
-
-    return y, x
+    return (x, y) if x < y else (y, x)
 
 
 def _get_random_aabb_box(max_box, device):
@@ -151,28 +148,31 @@ def test_equall_nerfacc():
     test that the output of intersect_aabb is close to nerfacc.intersect_aabb
     :return:
     """
-    check_nerf_acc = strtobool(os.environ.get("INTERSECT_WITH_NERFACC", "FALSE"))
-    if check_nerf_acc:
-        nerfacc = importlib.import_module("nerfacc")
-        random.seed(8128)
+    if not (
+        check_nerf_acc := strtobool(
+            os.environ.get("INTERSECT_WITH_NERFACC", "FALSE")
+        )
+    ):
+        return
+    nerfacc = importlib.import_module("nerfacc")
+    random.seed(8128)
 
-        max_box_size = 100
-        aabb = _get_random_aabb_box(max_box_size, test_device)
-        num_rays = 500
-        max_test_size = 1000
+    aabb = _get_random_aabb_box(100, test_device)
+    num_rays = 500
+    max_test_size = 1000
 
-        origins, directions = _get_random_rays(num_rays, max_test_size, aabb, test_device)
+    origins, directions = _get_random_rays(num_rays, max_test_size, aabb, test_device)
 
-        # time1 = time.time()
-        t_min, t_max = intersect_aabb(origins, directions, aabb)
-        # time2 = time.time()
+    # time1 = time.time()
+    t_min, t_max = intersect_aabb(origins, directions, aabb)
+    # time2 = time.time()
 
-        # time3 = time.time()
-        t_min_nerfacc, t_max_nerfacc = nerfacc.ray_aabb_intersect(origins, directions, aabb)
-        # time4 = time.time()
+    # time3 = time.time()
+    t_min_nerfacc, t_max_nerfacc = nerfacc.ray_aabb_intersect(origins, directions, aabb)
+    # time4 = time.time()
 
-        # print("pytorch ", time2-time1)
-        # print("nerfacc ", time4-time3)
+    # print("pytorch ", time2-time1)
+    # print("nerfacc ", time4-time3)
 
-        assert torch.allclose(t_min, t_min_nerfacc, rtol=0.001)
-        assert torch.allclose(t_max, t_max_nerfacc, rtol=0.001)
+    assert torch.allclose(t_min, t_min_nerfacc, rtol=0.001)
+    assert torch.allclose(t_max, t_max_nerfacc, rtol=0.001)

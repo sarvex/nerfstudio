@@ -54,8 +54,12 @@ def test_nerfstudio_dataparser_no_filelist(mocked_dataset, orientation_method):
         assert len(out.image_filenames) > 0
         paths.update(out.image_filenames)
     train_files = set(parser.get_dataparser_outputs("train").image_filenames)
-    assert len(train_files.intersection(parser.get_dataparser_outputs("val").image_filenames)) == 0
-    assert len(train_files.intersection(parser.get_dataparser_outputs("test").image_filenames)) == 0
+    assert not train_files.intersection(
+        parser.get_dataparser_outputs("val").image_filenames
+    )
+    assert not train_files.intersection(
+        parser.get_dataparser_outputs("test").image_filenames
+    )
     assert len(paths) == 10
 
 

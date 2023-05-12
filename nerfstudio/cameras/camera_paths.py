@@ -100,9 +100,7 @@ def get_spiral_path(
         new_c2ws.append(c2wh[:3, :4])
     new_c2ws = torch.stack(new_c2ws, dim=0)
 
-    times = None
-    if camera.times is not None:
-        times = torch.linspace(0, 1, steps)[:, None]
+    times = None if camera.times is None else torch.linspace(0, 1, steps)[:, None]
     return Cameras(
         fx=camera.fx[0],
         fy=camera.fy[0],
@@ -126,15 +124,15 @@ def get_path_from_json(camera_path: Dict[str, Any]) -> Cameras:
     image_height = camera_path["render_height"]
     image_width = camera_path["render_width"]
 
-    if "camera_type" not in camera_path:
+    if "camera_type" not in camera_path or camera_path["camera_type"] not in [
+        "fisheye",
+        "equirectangular",
+    ]:
         camera_type = CameraType.PERSPECTIVE
     elif camera_path["camera_type"] == "fisheye":
         camera_type = CameraType.FISHEYE
-    elif camera_path["camera_type"] == "equirectangular":
-        camera_type = CameraType.EQUIRECTANGULAR
     else:
-        camera_type = CameraType.PERSPECTIVE
-
+        camera_type = CameraType.EQUIRECTANGULAR
     c2ws = []
     fxs = []
     fys = []

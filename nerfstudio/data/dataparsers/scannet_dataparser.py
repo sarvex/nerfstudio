@@ -139,7 +139,9 @@ class ScanNet(DataParser):
 
         # Choose image_filenames and poses based on split, but after auto orient and scaling the poses.
         image_filenames = [image_filenames[i] for i in indices]
-        depth_filenames = [depth_filenames[i] for i in indices] if len(depth_filenames) > 0 else []
+        depth_filenames = (
+            [depth_filenames[i] for i in indices] if depth_filenames else []
+        )
         intrinsics = intrinsics[indices.tolist()]
         poses = poses[indices.tolist()]
 
@@ -163,15 +165,14 @@ class ScanNet(DataParser):
             camera_type=CameraType.PERSPECTIVE,
         )
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
             dataparser_scale=scale_factor,
             dataparser_transform=transform_matrix,
             metadata={
-                "depth_filenames": depth_filenames if len(depth_filenames) > 0 else None,
+                "depth_filenames": depth_filenames if depth_filenames else None,
                 "depth_unit_scale_factor": self.config.depth_unit_scale_factor,
             },
         )
-        return dataparser_outputs

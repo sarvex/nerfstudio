@@ -161,7 +161,7 @@ def write_cameras_text(cameras, path):
     HEADER = (
         "# Camera list with one line of data per camera:\n"
         + "#   CAMERA_ID, MODEL, WIDTH, HEIGHT, PARAMS[]\n"
-        + "# Number of cameras: {}\n".format(len(cameras))
+        + f"# Number of cameras: {len(cameras)}\n"
     )
     with open(path, "w") as fid:
         fid.write(HEADER)
@@ -209,7 +209,12 @@ def read_images_text(path):
                 camera_id = int(elems[8])
                 image_name = elems[9]
                 elems = fid.readline().split()
-                xys = np.column_stack([tuple(map(float, elems[0::3])), tuple(map(float, elems[1::3]))])
+                xys = np.column_stack(
+                    [
+                        tuple(map(float, elems[::3])),
+                        tuple(map(float, elems[1::3])),
+                    ]
+                )
                 point3D_ids = np.array(tuple(map(int, elems[2::3])))
                 images[image_id] = Image(
                     id=image_id,
@@ -245,7 +250,12 @@ def read_images_binary(path_to_model_file):
                 current_char = read_next_bytes(fid, 1, "c")[0]
             num_points2D = read_next_bytes(fid, num_bytes=8, format_char_sequence="Q")[0]
             x_y_id_s = read_next_bytes(fid, num_bytes=24 * num_points2D, format_char_sequence="ddq" * num_points2D)
-            xys = np.column_stack([tuple(map(float, x_y_id_s[0::3])), tuple(map(float, x_y_id_s[1::3]))])
+            xys = np.column_stack(
+                [
+                    tuple(map(float, x_y_id_s[::3])),
+                    tuple(map(float, x_y_id_s[1::3])),
+                ]
+            )
             point3D_ids = np.array(tuple(map(int, x_y_id_s[2::3])))
             images[image_id] = Image(
                 id=image_id,
@@ -273,7 +283,7 @@ def write_images_text(images, path):
         "# Image list with two lines of data per image:\n"
         + "#   IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, NAME\n"
         + "#   POINTS2D[] as (X, Y, POINT3D_ID)\n"
-        + "# Number of images: {}, mean observations per image: {}\n".format(len(images), mean_observations)
+        + f"# Number of images: {len(images)}, mean observations per image: {mean_observations}\n"
     )
 
     with open(path, "w") as fid:
@@ -283,9 +293,10 @@ def write_images_text(images, path):
             first_line = " ".join(map(str, image_header))
             fid.write(first_line + "\n")
 
-            points_strings = []
-            for xy, point3D_id in zip(img.xys, img.point3D_ids):
-                points_strings.append(" ".join(map(str, [*xy, point3D_id])))
+            points_strings = [
+                " ".join(map(str, [*xy, point3D_id]))
+                for xy, point3D_id in zip(img.xys, img.point3D_ids)
+            ]
             fid.write(" ".join(points_strings) + "\n")
 
 
@@ -354,7 +365,7 @@ def read_points3D_binary(path_to_model_file):
             error = np.array(binary_point_line_properties[7])
             track_length = read_next_bytes(fid, num_bytes=8, format_char_sequence="Q")[0]
             track_elems = read_next_bytes(fid, num_bytes=8 * track_length, format_char_sequence="ii" * track_length)
-            image_ids = np.array(tuple(map(int, track_elems[0::2])))
+            image_ids = np.array(tuple(map(int, track_elems[::2])))
             point2D_idxs = np.array(tuple(map(int, track_elems[1::2])))
             points3D[point3D_id] = Point3D(
                 id=point3D_id, xyz=xyz, rgb=rgb, error=error, image_ids=image_ids, point2D_idxs=point2D_idxs
@@ -375,7 +386,7 @@ def write_points3D_text(points3D, path):
     HEADER = (
         "# 3D point list with one line of data per point:\n"
         + "#   POINT3D_ID, X, Y, Z, R, G, B, ERROR, TRACK[] as (IMAGE_ID, POINT2D_IDX)\n"
-        + "# Number of points: {}, mean track length: {}\n".format(len(points3D), mean_track_length)
+        + f"# Number of points: {len(points3D)}, mean track length: {mean_track_length}\n"
     )
 
     with open(path, "w") as fid:
@@ -383,9 +394,10 @@ def write_points3D_text(points3D, path):
         for _, pt in points3D.items():
             point_header = [pt.id, *pt.xyz, *pt.rgb, pt.error]
             fid.write(" ".join(map(str, point_header)) + " ")
-            track_strings = []
-            for image_id, point2D in zip(pt.image_ids, pt.point2D_idxs):
-                track_strings.append(" ".join(map(str, [image_id, point2D])))
+            track_strings = [
+                " ".join(map(str, [image_id, point2D]))
+                for image_id, point2D in zip(pt.image_ids, pt.point2D_idxs)
+            ]
             fid.write(" ".join(track_strings) + "\n")
 
 
@@ -410,11 +422,11 @@ def write_points3D_binary(points3D, path_to_model_file):
 
 def detect_model_format(path, ext):
     if (
-        os.path.isfile(os.path.join(path, "cameras" + ext))
-        and os.path.isfile(os.path.join(path, "images" + ext))
-        and os.path.isfile(os.path.join(path, "points3D" + ext))
+        os.path.isfile(os.path.join(path, f"cameras{ext}"))
+        and os.path.isfile(os.path.join(path, f"images{ext}"))
+        and os.path.isfile(os.path.join(path, f"points3D{ext}"))
     ):
-        print("Detected model format: '" + ext + "'")
+        print(f"Detected model format: '{ext}'")
         return True
 
     return False
@@ -432,24 +444,24 @@ def read_model(path, ext=""):
             return
 
     if ext == ".txt":
-        cameras = read_cameras_text(os.path.join(path, "cameras" + ext))
-        images = read_images_text(os.path.join(path, "images" + ext))
+        cameras = read_cameras_text(os.path.join(path, f"cameras{ext}"))
+        images = read_images_text(os.path.join(path, f"images{ext}"))
         points3D = read_points3D_text(os.path.join(path, "points3D") + ext)
     else:
-        cameras = read_cameras_binary(os.path.join(path, "cameras" + ext))
-        images = read_images_binary(os.path.join(path, "images" + ext))
+        cameras = read_cameras_binary(os.path.join(path, f"cameras{ext}"))
+        images = read_images_binary(os.path.join(path, f"images{ext}"))
         points3D = read_points3D_binary(os.path.join(path, "points3D") + ext)
     return cameras, images, points3D
 
 
 def write_model(cameras, images, points3D, path, ext=".bin"):
     if ext == ".txt":
-        write_cameras_text(cameras, os.path.join(path, "cameras" + ext))
-        write_images_text(images, os.path.join(path, "images" + ext))
+        write_cameras_text(cameras, os.path.join(path, f"cameras{ext}"))
+        write_images_text(images, os.path.join(path, f"images{ext}"))
         write_points3D_text(points3D, os.path.join(path, "points3D") + ext)
     else:
-        write_cameras_binary(cameras, os.path.join(path, "cameras" + ext))
-        write_images_binary(images, os.path.join(path, "images" + ext))
+        write_cameras_binary(cameras, os.path.join(path, f"cameras{ext}"))
+        write_images_binary(images, os.path.join(path, f"images{ext}"))
         write_points3D_binary(points3D, os.path.join(path, "points3D") + ext)
     return cameras, images, points3D
 

@@ -126,10 +126,12 @@ class NeRFModel(Model):
             self.temporal_distortion = kind.to_temporal_distortion(params)
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
-        param_groups = {}
         if self.field_coarse is None or self.field_fine is None:
             raise ValueError("populate_fields() must be called before get_param_groups")
-        param_groups["fields"] = list(self.field_coarse.parameters()) + list(self.field_fine.parameters())
+        param_groups = {
+            "fields": list(self.field_coarse.parameters())
+            + list(self.field_fine.parameters())
+        }
         if self.temporal_distortion is not None:
             param_groups["temporal_distortion"] = list(self.temporal_distortion.parameters())
         return param_groups
@@ -171,7 +173,7 @@ class NeRFModel(Model):
         accumulation_fine = self.renderer_accumulation(weights_fine)
         depth_fine = self.renderer_depth(weights_fine, ray_samples_pdf)
 
-        outputs = {
+        return {
             "rgb_coarse": rgb_coarse,
             "rgb_fine": rgb_fine,
             "accumulation_coarse": accumulation_coarse,
@@ -179,7 +181,6 @@ class NeRFModel(Model):
             "depth_coarse": depth_coarse,
             "depth_fine": depth_fine,
         }
-        return outputs
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None) -> Dict[str, torch.Tensor]:
         # Scaling metrics by coefficients to create the losses.

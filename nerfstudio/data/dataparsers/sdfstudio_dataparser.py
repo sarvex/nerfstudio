@@ -144,17 +144,15 @@ class SDFStudio(DataParser):
         if self.config.include_mono_prior:
             assert meta["has_mono_prior"], f"no mono prior in {self.config.data}"
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
             metadata={
-                "depth_filenames": depth_filenames if len(depth_filenames) > 0 else None,
-                "normal_filenames": normal_filenames if len(normal_filenames) > 0 else None,
+                "depth_filenames": depth_filenames if depth_filenames else None,
+                "normal_filenames": normal_filenames if normal_filenames else None,
                 "transform": transform,
-                # required for normal maps, these are in colmap format so they require c2w before conversion
                 "camera_to_worlds": c2w_colmap if len(c2w_colmap) > 0 else None,
                 "include_mono_prior": self.config.include_mono_prior,
             },
         )
-        return dataparser_outputs

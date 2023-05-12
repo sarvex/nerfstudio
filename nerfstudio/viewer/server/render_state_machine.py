@@ -95,10 +95,7 @@ class RenderStateMachine(threading.Thread):
             #  1. we are in low_moving state
             #  2. the current next_action is move, static, or rerender
             return
-        elif self.next_action == "rerender":
-            # never overwrite rerenders
-            pass
-        else:
+        elif self.next_action != "rerender":
             #  monimal use case, just set the next action
             self.next_action = action
 
@@ -139,12 +136,10 @@ class RenderStateMachine(threading.Thread):
         )
 
         camera_type_msg = cam_msg.camera_type
-        if camera_type_msg == "perspective":
-            camera_type = CameraType.PERSPECTIVE
+        if camera_type_msg == "equirectangular":
+            camera_type = CameraType.EQUIRECTANGULAR
         elif camera_type_msg == "fisheye":
             camera_type = CameraType.FISHEYE
-        elif camera_type_msg == "equirectangular":
-            camera_type = CameraType.EQUIRECTANGULAR
         else:
             camera_type = CameraType.PERSPECTIVE
 
@@ -211,14 +206,13 @@ class RenderStateMachine(threading.Thread):
             if self.state == "low_static":
                 self.action(RenderAction("static", action.cam_msg))
 
-    def check_interrupt(self, frame, event, arg):  # pylint: disable=unused-argument
+    def check_interrupt(self, frame, event, arg):    # pylint: disable=unused-argument
         """Raises interrupt when flag has been set and not already on lowest resolution.
         Used in conjunction with SetTrace.
         """
-        if event == "line":
-            if self.interrupt_render_flag:
-                self.interrupt_render_flag = False
-                raise viewer_utils.IOChangeException
+        if event == "line" and self.interrupt_render_flag:
+            self.interrupt_render_flag = False
+            raise viewer_utils.IOChangeException
         return self.check_interrupt
 
     def _send_output_to_viewer(self, outputs: Dict[str, Any]):

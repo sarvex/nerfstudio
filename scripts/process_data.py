@@ -100,7 +100,7 @@ class ProcessImages:
     verbose: bool = False
     """If True, print extra logging."""
 
-    def main(self) -> None:  # pylint: disable=R0915
+    def main(self) -> None:    # pylint: disable=R0915
         """Process images into a nerfstudio dataset."""
         # pylint: disable=too-many-statements
         require_cameras_exist = False
@@ -140,13 +140,15 @@ class ProcessImages:
             image_rename_map_paths = process_data_utils.copy_images(
                 self.data, image_dir=image_dir, crop_factor=self.crop_factor, verbose=self.verbose
             )
-            image_rename_map = dict((a.name, b.name) for a, b in image_rename_map_paths.items())
+            image_rename_map = {a.name: b.name for a, b in image_rename_map_paths.items()}
             num_frames = len(image_rename_map)
-            summary_log.append(f"Starting with {num_frames} images")
-
-            # Downscale images
-            summary_log.append(
-                process_data_utils.downscale_images(image_dir, self.num_downscales, verbose=self.verbose)
+            summary_log.extend(
+                (
+                    f"Starting with {num_frames} images",
+                    process_data_utils.downscale_images(
+                        image_dir, self.num_downscales, verbose=self.verbose
+                    ),
+                )
             )
         else:
             num_frames = len(process_data_utils.list_images(self.data))
@@ -490,19 +492,17 @@ class ProcessRecord3D:
         image_dir = self.output_dir / "images"
         image_dir.mkdir(parents=True, exist_ok=True)
 
-        summary_log = []
-
         record3d_image_dir = self.data / "rgb"
 
         if not record3d_image_dir.exists():
             raise ValueError(f"Image directory {record3d_image_dir} doesn't exist")
 
-        record3d_image_filenames = []
-        for f in record3d_image_dir.iterdir():
-            if f.stem.isdigit():  # removes possible duplicate images (for example, 123(3).jpg)
-                if f.suffix.lower() in [".jpg", ".jpeg", ".png", ".tif", ".tiff"]:
-                    record3d_image_filenames.append(f)
-
+        record3d_image_filenames = [
+            f
+            for f in record3d_image_dir.iterdir()
+            if f.stem.isdigit()
+            and f.suffix.lower() in [".jpg", ".jpeg", ".png", ".tif", ".tiff"]
+        ]
         record3d_image_filenames = sorted(record3d_image_filenames, key=lambda fn: int(fn.stem))
         num_images = len(record3d_image_filenames)
         idx = np.arange(num_images)
@@ -516,8 +516,11 @@ class ProcessRecord3D:
         )
         num_frames = len(copied_image_paths)
 
-        copied_image_paths = [Path("images/" + copied_image_path.name) for copied_image_path in copied_image_paths]
-        summary_log.append(f"Used {num_frames} images out of {num_images} total")
+        copied_image_paths = [
+            Path(f"images/{copied_image_path.name}")
+            for copied_image_path in copied_image_paths
+        ]
+        summary_log = [f"Used {num_frames} images out of {num_images} total"]
         if self.max_dataset_size > 0:
             summary_log.append(
                 "To change the size of the dataset add the argument [yellow]--max_dataset_size[/yellow] to "
@@ -698,15 +701,19 @@ class ProcessMetashape:
         )
         num_frames = len(copied_image_paths)
 
-        copied_image_paths = [Path("images/" + copied_image_path.name) for copied_image_path in copied_image_paths]
+        copied_image_paths = [
+            Path(f"images/{copied_image_path.name}")
+            for copied_image_path in copied_image_paths
+        ]
         original_names = [image_path.stem for image_path in image_filenames]
         image_filename_map = dict(zip(original_names, copied_image_paths))
 
         if self.max_dataset_size > 0 and num_frames != num_orig_images:
-            summary_log.append(f"Started with {num_frames} images out of {num_orig_images} total")
-            summary_log.append(
-                "To change the size of the dataset add the argument [yellow]--max_dataset_size[/yellow] to "
-                f"larger than the current value ({self.max_dataset_size}), or -1 to use all images."
+            summary_log.extend(
+                (
+                    f"Started with {num_frames} images out of {num_orig_images} total",
+                    f"To change the size of the dataset add the argument [yellow]--max_dataset_size[/yellow] to larger than the current value ({self.max_dataset_size}), or -1 to use all images.",
+                )
             )
         else:
             summary_log.append(f"Started with {num_frames} images")
@@ -785,15 +792,19 @@ class ProcessRealityCapture:
         )
         num_frames = len(copied_image_paths)
 
-        copied_image_paths = [Path("images/" + copied_image_path.name) for copied_image_path in copied_image_paths]
+        copied_image_paths = [
+            Path(f"images/{copied_image_path.name}")
+            for copied_image_path in copied_image_paths
+        ]
         original_names = [image_path.stem for image_path in image_filenames]
         image_filename_map = dict(zip(original_names, copied_image_paths))
 
         if self.max_dataset_size > 0 and num_frames != num_orig_images:
-            summary_log.append(f"Started with {num_frames} images out of {num_orig_images} total")
-            summary_log.append(
-                "To change the size of the dataset add the argument [yellow]--max_dataset_size[/yellow] to "
-                f"larger than the current value ({self.max_dataset_size}), or -1 to use all images."
+            summary_log.extend(
+                (
+                    f"Started with {num_frames} images out of {num_orig_images} total",
+                    f"To change the size of the dataset add the argument [yellow]--max_dataset_size[/yellow] to larger than the current value ({self.max_dataset_size}), or -1 to use all images.",
+                )
             )
         else:
             summary_log.append(f"Started with {num_frames} images")

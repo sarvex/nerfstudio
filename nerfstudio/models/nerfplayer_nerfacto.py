@@ -225,9 +225,8 @@ class NerfplayerNerfactoModel(NerfactoModel):
         return outputs
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
-        loss_dict = {}
         image = batch["image"].to(self.device)
-        loss_dict["rgb_loss"] = self.rgb_loss(image, outputs["rgb"])
+        loss_dict = {"rgb_loss": self.rgb_loss(image, outputs["rgb"])}
         if self.training:
             loss_dict["interlevel_loss"] = self.config.interlevel_loss_mult * interlevel_loss(
                 outputs["weights_list"], outputs["ray_samples_list"]

@@ -60,9 +60,10 @@ def run_github_actions_file(filename: str, continue_on_fail: bool = False):
     success = success and run_command("python scripts/docs/add_nb_tags.py", continue_on_fail=continue_on_fail)
     CONSOLE.line()
     CONSOLE.rule("[bold green]Building Documentation")
-    success = success and run_command("cd docs/; make html SPHINXOPTS='-W;'", continue_on_fail=continue_on_fail)
-
-    if success:
+    if success := success and run_command(
+        "cd docs/; make html SPHINXOPTS='-W;'",
+        continue_on_fail=continue_on_fail,
+    ):
         CONSOLE.line()
         CONSOLE.rule(characters="=")
         CONSOLE.print("[bold green]:TADA: :TADA: :TADA: ALL CHECKS PASSED :TADA: :TADA: :TADA:", justify="center")

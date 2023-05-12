@@ -140,15 +140,11 @@ class GuiHandle(Generic[T]):
         """Allow/disallow user interaction with the input."""
         if self._impl.is_button:
             self._impl.leva_conf["settings"]["disabled"] = disabled
-            self._impl.api._queue(
-                GuiSetLevaConfMessage(self._impl.name, self._impl.leva_conf),
-            )
         else:
             self._impl.leva_conf["disabled"] = disabled
-            self._impl.api._queue(
-                GuiSetLevaConfMessage(self._impl.name, self._impl.leva_conf),
-            )
-
+        self._impl.api._queue(
+            GuiSetLevaConfMessage(self._impl.name, self._impl.leva_conf),
+        )
         return self
 
     def set_hidden(self, hidden: bool) -> GuiHandle[T]:

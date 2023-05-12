@@ -165,9 +165,7 @@ class RaySamples(TensorDataclass):
         )
 
         weights = alphas * transmittance[:, :-1, :]
-        if weights_only:
-            return weights
-        return weights, transmittance
+        return weights if weights_only else (weights, transmittance)
 
 
 @dataclass
@@ -201,8 +199,7 @@ class RayBundle(TensorDataclass):
         self.camera_indices = torch.ones_like(self.origins[..., 0:1]).long() * camera_index
 
     def __len__(self) -> int:
-        num_rays = torch.numel(self.origins) // self.origins.shape[-1]
-        return num_rays
+        return torch.numel(self.origins) // self.origins.shape[-1]
 
     def sample(self, num_rays: int) -> "RayBundle":
         """Returns a RayBundle as a subset of rays.
@@ -263,7 +260,7 @@ class RayBundle(TensorDataclass):
             pixel_area=shaped_raybundle_fields.pixel_area,  # [..., 1, 1]
         )
 
-        ray_samples = RaySamples(
+        return RaySamples(
             frustums=frustums,
             camera_indices=camera_indices,  # [..., 1, 1]
             deltas=deltas,  # [..., num_samples, 1]
@@ -271,7 +268,7 @@ class RayBundle(TensorDataclass):
             spacing_ends=spacing_ends,  # [..., num_samples, 1]
             spacing_to_euclidean_fn=spacing_to_euclidean_fn,
             metadata=shaped_raybundle_fields.metadata,
-            times=None if self.times is None else self.times[..., None],  # [..., 1, 1]
+            times=None
+            if self.times is None
+            else self.times[..., None],  # [..., 1, 1]
         )
-
-        return ray_samples

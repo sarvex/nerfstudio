@@ -144,8 +144,7 @@ class SemanticNerfWModel(Model):
         self.lpips = LearnedPerceptualImagePatchSimilarity(normalize=True)
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
-        param_groups = {}
-        param_groups["proposal_networks"] = list(self.proposal_networks.parameters())
+        param_groups = {"proposal_networks": list(self.proposal_networks.parameters())}
         param_groups["fields"] = list(self.field.parameters())
         return param_groups
 
@@ -196,10 +195,13 @@ class SemanticNerfWModel(Model):
         depth = self.renderer_depth(weights=weights_static, ray_samples=ray_samples)
         accumulation = self.renderer_accumulation(weights=weights_static)
 
-        outputs = {"rgb": rgb, "accumulation": accumulation, "depth": depth}
-        outputs["weights_list"] = weights_list
-        outputs["ray_samples_list"] = ray_samples_list
-
+        outputs = {
+            "rgb": rgb,
+            "accumulation": accumulation,
+            "depth": depth,
+            "weights_list": weights_list,
+            "ray_samples_list": ray_samples_list,
+        }
         for i in range(self.config.num_proposal_iterations):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
 
@@ -225,18 +227,17 @@ class SemanticNerfWModel(Model):
         return outputs
 
     def get_metrics_dict(self, outputs, batch):
-        metrics_dict = {}
         image = batch["image"].to(self.device)
-        metrics_dict["psnr"] = self.psnr(outputs["rgb"], image)
+        metrics_dict = {"psnr": self.psnr(outputs["rgb"], image)}
         metrics_dict["distortion"] = distortion_loss(outputs["weights_list"], outputs["ray_samples_list"])
         return metrics_dict
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
-        loss_dict = {}
         image = batch["image"].to(self.device)
-        loss_dict["interlevel_loss"] = self.config.interlevel_loss_mult * interlevel_loss(
-            outputs["weights_list"], outputs["ray_samples_list"]
-        )
+        loss_dict = {
+            "interlevel_loss": self.config.interlevel_loss_mult
+            * interlevel_loss(outputs["weights_list"], outputs["ray_samples_list"])
+        }
         assert metrics_dict is not None and "distortion" in metrics_dict
         loss_dict["distortion_loss"] = self.config.distortion_loss_mult * metrics_dict["distortion"]
 

@@ -266,8 +266,7 @@ class DepthRenderer(nn.Module):
             split = torch.ones((*weights.shape[:-2], 1), device=weights.device) * 0.5  # [..., 1]
             median_index = torch.searchsorted(cumulative_weights, split, side="left")  # [..., 1]
             median_index = torch.clamp(median_index, 0, steps.shape[-2] - 1)  # [..., 1]
-            median_depth = torch.gather(steps[..., 0], dim=-1, index=median_index)  # [..., 1]
-            return median_depth
+            return torch.gather(steps[..., 0], dim=-1, index=median_index)
         if self.method == "expected":
             eps = 1e-10
             steps = (ray_samples.frustums.starts + ray_samples.frustums.ends) / 2
@@ -315,10 +314,8 @@ class SemanticRenderer(nn.Module):
         cls,
         semantics: TensorType["bs":..., "num_samples", "num_classes"],
         weights: TensorType["bs":..., "num_samples", 1],
-    ) -> TensorType["bs":..., "num_classes"]:
-        """Calculate semantics along the ray."""
-        sem = torch.sum(weights * semantics, dim=-2)
-        return sem
+    ) -> TensorType["bs":..., "num_classes"]:    ..., "num_classes"
+        return torch.sum(weights * semantics, dim=-2)
 
 
 class NormalsRenderer(nn.Module):

@@ -127,7 +127,7 @@ class CameraOptimizer(nn.Module):
             outputs.append(self.pose_noise[indices, :, :])
 
         # Return: identity if no transforms are needed, otherwise multiply transforms together.
-        if len(outputs) == 0:
+        if not outputs:
             # Note that using repeat() instead of tile() here would result in unnecessary copies.
             return torch.eye(4, device=self.device)[None, :3, :4].tile(indices.shape[0], 1, 1)
         return functools.reduce(pose_utils.multiply, outputs)

@@ -61,17 +61,17 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
             num_images: number of images to sample over
             mask: mask of possible pixels in an image to sample from.
         """
-        if isinstance(mask, torch.Tensor):
-            nonzero_indices = torch.nonzero(mask[..., 0], as_tuple=False)
-            chosen_indices = random.sample(range(len(nonzero_indices)), k=batch_size)
-            indices = nonzero_indices[chosen_indices]
-        else:
-            indices = torch.floor(
+        if not isinstance(mask, torch.Tensor):
+            return torch.floor(
                 torch.rand((batch_size, 3), device=device)
-                * torch.tensor([num_images, image_height, image_width], device=device)
+                * torch.tensor(
+                    [num_images, image_height, image_width], device=device
+                )
             ).long()
 
-        return indices
+        nonzero_indices = torch.nonzero(mask[..., 0], as_tuple=False)
+        chosen_indices = random.sample(range(len(nonzero_indices)), k=batch_size)
+        return nonzero_indices[chosen_indices]
 
     def collate_image_dataset_batch(self, batch: Dict, num_rays_per_batch: int, keep_full_image: bool = False):
         """
@@ -133,8 +133,8 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
         all_indices = []
         all_images = []
 
+        num_rays_in_batch = num_rays_per_batch // num_images
         if "mask" in batch:
-            num_rays_in_batch = num_rays_per_batch // num_images
             for i in range(num_images):
 
                 image_height, image_width, _ = batch["image"][i].shape
@@ -150,7 +150,6 @@ class PixelSampler:  # pylint: disable=too-few-public-methods
                 all_images.append(batch["image"][i][indices[:, 1], indices[:, 2]])
 
         else:
-            num_rays_in_batch = num_rays_per_batch // num_images
             for i in range(num_images):
                 image_height, image_width, _ = batch["image"][i].shape
                 if i == num_images - 1:
@@ -227,22 +226,25 @@ class EquirectangularPixelSampler(PixelSampler):  # pylint: disable=too-few-publ
             # sampling weight to the poles of the image than the equators.
             # TODO(kevinddchen): implement the correct mask-sampling method.
 
-            indices = super().sample_method(batch_size, num_images, image_height, image_width, mask=mask, device=device)
-        else:
-
-            # We sample theta uniformly in [0, 2*pi]
-            # We sample phi in [0, pi] according to the PDF f(phi) = sin(phi) / 2.
-            # This is done by inverse transform sampling.
-            # http://corysimon.github.io/articles/uniformdistn-on-sphere/
-            num_images_rand = torch.rand(batch_size, device=device)
-            phi_rand = torch.acos(1 - 2 * torch.rand(batch_size, device=device)) / torch.pi
-            theta_rand = torch.rand(batch_size, device=device)
-            indices = torch.floor(
-                torch.stack((num_images_rand, phi_rand, theta_rand), dim=-1)
-                * torch.tensor([num_images, image_height, image_width], device=device)
-            ).long()
-
-        return indices
+            return super().sample_method(
+                batch_size,
+                num_images,
+                image_height,
+                image_width,
+                mask=mask,
+                device=device,
+            )
+        # We sample theta uniformly in [0, 2*pi]
+        # We sample phi in [0, pi] according to the PDF f(phi) = sin(phi) / 2.
+        # This is done by inverse transform sampling.
+        # http://corysimon.github.io/articles/uniformdistn-on-sphere/
+        num_images_rand = torch.rand(batch_size, device=device)
+        phi_rand = torch.acos(1 - 2 * torch.rand(batch_size, device=device)) / torch.pi
+        theta_rand = torch.rand(batch_size, device=device)
+        return torch.floor(
+            torch.stack((num_images_rand, phi_rand, theta_rand), dim=-1)
+            * torch.tensor([num_images, image_height, image_width], device=device)
+        ).long()
 
 
 class PatchPixelSampler(PixelSampler):  # pylint: disable=too-few-public-methods

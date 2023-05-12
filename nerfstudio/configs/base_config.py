@@ -36,14 +36,14 @@ class PrintableConfig:  # pylint: disable=too-few-public-methods
     """Printable Config defining str function"""
 
     def __str__(self):
-        lines = [self.__class__.__name__ + ":"]
+        lines = [f"{self.__class__.__name__}:"]
         for key, val in vars(self).items():
             if isinstance(val, Tuple):
                 flattened_val = "["
                 for item in val:
                     flattened_val += str(item) + "\n"
                 flattened_val = flattened_val.rstrip("\n")
-                val = flattened_val + "]"
+                val = f"{flattened_val}]"
             lines += f"{key}: {str(val)}".split("\n")
         return "\n    ".join(lines)
 

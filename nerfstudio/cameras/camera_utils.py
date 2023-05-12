@@ -196,9 +196,7 @@ def get_interpolated_k(k_a, k_b, steps: int = 10) -> TensorType[3, 4]:
     """
     Ks = []
     ts = np.linspace(0, 1, steps)
-    for t in ts:
-        new_k = k_a * (1.0 - t) + k_b * t
-        Ks.append(new_k)
+    Ks.extend(k_a * (1.0 - t) + k_b * t for t in ts)
     return Ks
 
 
@@ -267,8 +265,7 @@ def viewmatrix(lookat: torch.Tensor, up: torch.Tensor, pos: torch.Tensor) -> Ten
     vec1_avg = normalize(up)
     vec0 = normalize(torch.cross(vec1_avg, vec2))
     vec1 = normalize(torch.cross(vec2, vec0))
-    m = torch.stack([vec0, vec1, vec2, pos], 1)
-    return m
+    return torch.stack([vec0, vec1, vec2, pos], 1)
 
 
 def get_distortion_params(

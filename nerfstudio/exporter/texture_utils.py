@@ -363,10 +363,10 @@ def export_textured_mesh(
     faces = mesh.faces.to(device)
     vertex_normals = mesh.normals.to(device)
 
-    summary_log = []
-    summary_log.append(f"Unwrapped mesh using {unwrap_method} method.")
-    summary_log.append(f"Mesh has {len(vertices)} vertices and {len(faces)} faces.")
-
+    summary_log = [
+        f"Unwrapped mesh using {unwrap_method} method.",
+        f"Mesh has {len(vertices)} vertices and {len(faces)} faces.",
+    ]
     if unwrap_method == "xatlas":
         CONSOLE.print("Unwrapping mesh with xatlas method... this may take a while.")
         texture_coordinates, origins, directions = unwrap_mesh_with_xatlas(
@@ -434,62 +434,58 @@ def export_textured_mesh(
         "map_Kd material_0.png",
     ]
     lines_mtl = [line + "\n" for line in lines_mtl]
-    file_mtl = open(output_dir / "material_0.mtl", "w", encoding="utf-8")  # pylint: disable=consider-using-with
-    file_mtl.writelines(lines_mtl)
-    file_mtl.close()
-
+    with open(output_dir / "material_0.mtl", "w", encoding="utf-8") as file_mtl:
+        file_mtl.writelines(lines_mtl)
     # create the .obj file
     lines_obj = ["# Generated with nerfstudio", "mtllib material_0.mtl", "usemtl material_0"]
     lines_obj = [line + "\n" for line in lines_obj]
-    file_obj = open(output_dir / "mesh.obj", "w", encoding="utf-8")  # pylint: disable=consider-using-with
-    file_obj.writelines(lines_obj)
+    with open(output_dir / "mesh.obj", "w", encoding="utf-8") as file_obj:
+        file_obj.writelines(lines_obj)
 
-    # write the geometric vertices
-    vertices = vertices.cpu().numpy()
-    progress = get_progress("Writing vertices to file", suffix="lines-per-sec")
-    with progress:
-        for i in progress.track(range(len(vertices))):
-            vertex = vertices[i]
-            line = f"v {vertex[0]} {vertex[1]} {vertex[2]}\n"
-            file_obj.write(line)
-
-    # write the texture coordinates
-    texture_coordinates = texture_coordinates.cpu().numpy()
-    with progress:
-        progress = get_progress("Writing texture coordinates to file", suffix="lines-per-sec")
-        for i in progress.track(range(len(faces))):
-            for uv in texture_coordinates[i]:
-                line = f"vt {uv[0]} {1.0 - uv[1]}\n"
+        # write the geometric vertices
+        vertices = vertices.cpu().numpy()
+        progress = get_progress("Writing vertices to file", suffix="lines-per-sec")
+        with progress:
+            for i in progress.track(range(len(vertices))):
+                vertex = vertices[i]
+                line = f"v {vertex[0]} {vertex[1]} {vertex[2]}\n"
                 file_obj.write(line)
 
-    # write the vertex normals
-    vertex_normals = vertex_normals.cpu().numpy()
-    progress = get_progress("Writing vertex normals to file", suffix="lines-per-sec")
-    with progress:
-        for i in progress.track(range(len(vertex_normals))):
-            normal = vertex_normals[i]
-            line = f"vn {normal[0]} {normal[1]} {normal[2]}\n"
-            file_obj.write(line)
+        # write the texture coordinates
+        texture_coordinates = texture_coordinates.cpu().numpy()
+        with progress:
+            progress = get_progress("Writing texture coordinates to file", suffix="lines-per-sec")
+            for i in progress.track(range(len(faces))):
+                for uv in texture_coordinates[i]:
+                    line = f"vt {uv[0]} {1.0 - uv[1]}\n"
+                    file_obj.write(line)
 
-    # write the faces
-    faces = faces.cpu().numpy()
-    progress = get_progress("Writing faces to file", suffix="lines-per-sec")
-    with progress:
-        for i in progress.track(range(len(faces))):
-            face = faces[i]
-            v1 = face[0] + 1
-            v2 = face[1] + 1
-            v3 = face[2] + 1
-            vt1 = i * 3 + 1
-            vt2 = i * 3 + 2
-            vt3 = i * 3 + 3
-            vn1 = v1
-            vn2 = v2
-            vn3 = v3
-            line = f"f {v1}/{vt1}/{vn1} {v2}/{vt2}/{vn2} {v3}/{vt3}/{vn3}\n"
-            file_obj.write(line)
+        # write the vertex normals
+        vertex_normals = vertex_normals.cpu().numpy()
+        progress = get_progress("Writing vertex normals to file", suffix="lines-per-sec")
+        with progress:
+            for i in progress.track(range(len(vertex_normals))):
+                normal = vertex_normals[i]
+                line = f"vn {normal[0]} {normal[1]} {normal[2]}\n"
+                file_obj.write(line)
 
-    file_obj.close()
+        # write the faces
+        faces = faces.cpu().numpy()
+        progress = get_progress("Writing faces to file", suffix="lines-per-sec")
+        with progress:
+            for i in progress.track(range(len(faces))):
+                face = faces[i]
+                v1 = face[0] + 1
+                v2 = face[1] + 1
+                v3 = face[2] + 1
+                vt1 = i * 3 + 1
+                vt2 = i * 3 + 2
+                vt3 = i * 3 + 3
+                vn1 = v1
+                vn2 = v2
+                vn3 = v3
+                line = f"f {v1}/{vt1}/{vn1} {v2}/{vt2}/{vn2} {v3}/{vt3}/{vn3}\n"
+                file_obj.write(line)
 
     summary_log.append(f"OBJ file saved to {output_dir / 'mesh.obj'}")
     summary_log.append(f"MTL file saved to {output_dir / 'material_0.mtl'}")

@@ -246,7 +246,7 @@ class Writer:
             step: the time step to log
         """
         for key, scalar in scalar_dict.items():
-            self.write_scalar(name + "/" + key, float(scalar), step)
+            self.write_scalar(f"{name}/{key}", float(scalar), step)
 
 
 class TimeWriter:
@@ -267,8 +267,8 @@ class TimeWriter:
 
     def __exit__(self, *args):
         self.duration = time() - self.start
-        update_step = self.step is not None
         if self.write:
+            update_step = self.step is not None
             self.writer.put_time(
                 name=self.name,
                 duration=self.duration,
@@ -354,10 +354,7 @@ def _format_time(seconds):
         return f"{hours} h, {minutes} m, {seconds} s"
     if minutes > 0:
         return f"{minutes} m, {seconds} s"
-    if seconds > 0:
-        return f"{seconds} s, {ms:0.3f} ms"
-
-    return f"{ms:0.3f} ms"
+    return f"{seconds} s, {ms:0.3f} ms" if seconds > 0 else f"{ms:0.3f} ms"
 
 
 @decorate_all([check_main_thread])

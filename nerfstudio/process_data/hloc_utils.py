@@ -108,8 +108,7 @@ def run_hloc(
         pairs_from_exhaustive.main(sfm_pairs, image_list=references)
     else:
         retrieval_path = extract_features.main(retrieval_conf, image_dir, outputs)
-        if num_matched >= len(references):
-            num_matched = len(references)
+        num_matched = min(num_matched, len(references))
         pairs_from_retrieval.main(retrieval_path, sfm_pairs, num_matched=num_matched)
     match_features.main(matcher_conf, sfm_pairs, features=features, matches=matches)
 

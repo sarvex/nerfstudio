@@ -135,7 +135,7 @@ class ViewerState:
         self.control_panel.install(self.viser_server)
 
         def nested_folder_install(folder_labels: List[str], element: ViewerElement):
-            if len(folder_labels) == 0:
+            if not folder_labels:
                 element.install(self.viser_server)
                 # also rewire the hook to rerender
                 prev_cb = element.cb_hook
@@ -206,16 +206,17 @@ class ViewerState:
         assert isinstance(message, CameraPathOptionsRequest)
         camera_path_dir = self.datapath / "camera_paths"
         if camera_path_dir.exists():
-            all_path_dict = {}
-            for path in camera_path_dir.iterdir():
-                if path.suffix == ".json":
-                    all_path_dict[path.stem] = load_from_json(path)
+            all_path_dict = {
+                path.stem: load_from_json(path)
+                for path in camera_path_dir.iterdir()
+                if path.suffix == ".json"
+            }
             self.viser_server.send_camera_paths(all_path_dict)
 
     def _handle_camera_path_payload(self, message: NerfstudioMessage) -> None:
         """Handle camera path payload message from viewer."""
         assert isinstance(message, CameraPathPayloadMessage)
-        camera_path_filename = message.camera_path_filename + ".json"
+        camera_path_filename = f"{message.camera_path_filename}.json"
         camera_path = message.camera_path
         camera_paths_directory = self.datapath / "camera_paths"
         camera_paths_directory.mkdir(parents=True, exist_ok=True)
@@ -236,9 +237,7 @@ class ViewerState:
     @property
     def is_training(self) -> bool:
         """Get is_training flag from viewer."""
-        if self.trainer is not None:
-            return self.trainer.is_training
-        return False
+        return self.trainer.is_training if self.trainer is not None else False
 
     @is_training.setter
     def is_training(self, is_training: bool) -> None:

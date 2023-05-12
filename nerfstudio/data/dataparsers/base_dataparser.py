@@ -155,8 +155,7 @@ class DataParser:
         Returns:
             DataparserOutputs containing data for the specified dataset and split
         """
-        dataparser_outputs = self._generate_dataparser_outputs(split)
-        return dataparser_outputs
+        return self._generate_dataparser_outputs(split)
 
 
 def transform_poses_to_original_space(
@@ -195,8 +194,6 @@ def transform_poses_to_original_space(
     output_poses = torch.einsum("ij,bjk->bik", inv_transform, output_poses)
     if camera_convention == "opencv":
         output_poses[..., 0:3, 1:3] *= -1
-    elif camera_convention == "opengl":
-        pass
-    else:
+    elif camera_convention != "opengl":
         raise ValueError(f"Camera convention {camera_convention} is not supported.")
     return output_poses[:, :3]

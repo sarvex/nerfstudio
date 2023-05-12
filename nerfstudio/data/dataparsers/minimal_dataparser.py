@@ -97,7 +97,7 @@ class MinimalDataParser(DataParser):
             applied_transform = data["applied_transform"].astype(np.float32)
             assert applied_transform.shape == (3, 4)
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
@@ -106,4 +106,3 @@ class MinimalDataParser(DataParser):
             dataparser_scale=applied_scale,
             metadata=metadata,
         )
-        return dataparser_outputs

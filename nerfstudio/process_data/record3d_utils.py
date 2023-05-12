@@ -86,9 +86,8 @@ def record3d_to_json(images_paths: List[Path], metadata_path: Path, output_dir: 
         "w": W,
         "h": H,
         "camera_model": CAMERA_MODELS["perspective"].name,
+        "frames": frames,
     }
-
-    out["frames"] = frames
 
     with open(output_dir / "transforms.json", "w", encoding="utf-8") as f:
         json.dump(out, f, indent=4)

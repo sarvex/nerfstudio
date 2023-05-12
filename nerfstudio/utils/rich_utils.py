@@ -54,9 +54,7 @@ def status(msg: str, spinner: str = "bouncingBall", verbose: bool = False):
         spinner: The spinner to use.
         verbose: If True, print all logs, else hide them.
     """
-    if verbose:
-        return nullcontext()
-    return CONSOLE.status(msg, spinner=spinner)
+    return nullcontext() if verbose else CONSOLE.status(msg, spinner=spinner)
 
 
 def get_progress(description: str, suffix: Optional[str] = None):
@@ -64,5 +62,4 @@ def get_progress(description: str, suffix: Optional[str] = None):
     progress_list = [TextColumn(description), BarColumn(), TaskProgressColumn(show_speed=True)]
     progress_list += [ItersPerSecColumn(suffix=suffix)] if suffix else []
     progress_list += [TimeRemainingColumn(elapsed_when_finished=True, compact=True)]
-    progress = Progress(*progress_list)
-    return progress
+    return Progress(*progress_list)

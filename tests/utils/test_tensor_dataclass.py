@@ -61,7 +61,7 @@ def test_broadcasting():
         tensor_dataclass = DummyTensorDataclass(a=a, b=b)
 
 
-def test_tensor_ops():  # pylint: disable=(too-many-statements)
+def test_tensor_ops():    # pylint: disable=(too-many-statements)
     """Test tensor operations"""
 
     a = torch.ones((4, 6, 3))
@@ -91,7 +91,7 @@ def test_tensor_ops():  # pylint: disable=(too-many-statements)
     assert flattened.b.shape == (24, 2)
     assert flattened.d["t1"].shape == (24, 3)
     assert flattened.d["t2"]["t3"].shape == (24, 4)
-    assert flattened[0:4].shape == (4,)
+    assert flattened[:4].shape == (4,)
 
     # Test indexing operations
     assert tensor_dataclass[:, 1].shape == (4,)

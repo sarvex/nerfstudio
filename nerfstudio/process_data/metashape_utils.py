@@ -29,9 +29,7 @@ CONSOLE = Console(width=120)
 
 def _find_param(calib_xml: ET.Element, param_name: str):
     param = calib_xml.find(param_name)
-    if param is not None:
-        return float(param.text)  # type: ignore
-    return 0.0
+    return float(param.text) if param is not None else 0.0
 
 
 def metashape_to_json(  # pylint: disable=too-many-statements
@@ -118,11 +116,7 @@ def metashape_to_json(  # pylint: disable=too-many-statements
             else:
                 t = np.array([float(x) for x in translation.text.split()])
             scale = transform.find("scale")
-            if scale is None:
-                s = 1.0
-            else:
-                s = float(scale.text)
-
+            s = 1.0 if scale is None else float(scale.text)
             m = np.eye(4)
             m[:3, :3] = r
             m[:3, 3] = t / s
@@ -133,16 +127,14 @@ def metashape_to_json(  # pylint: disable=too-many-statements
     assert cameras is not None, "Cameras not found in Metashape xml"
     num_skipped = 0
     for camera in cameras:
-        frame = {}
         camera_label = camera.get("label")
         if camera_label not in image_filename_map:
             # Labels sometimes have a file extension. Try without the extension.
             # (maybe it's just a '.' in the image name)
             camera_label = camera_label.split(".")[0]  # type: ignore
-            if camera_label not in image_filename_map:
-                continue
-        frame["file_path"] = image_filename_map[camera_label].as_posix()
-
+        if camera_label not in image_filename_map:
+            continue
+        frame = {"file_path": image_filename_map[camera_label].as_posix()}
         sensor_id = camera.get("sensor_id")
         if sensor_id not in sensor_dict:
             # this should only happen when we have a sensor that doesn't have calibration
@@ -151,7 +143,7 @@ def metashape_to_json(  # pylint: disable=too-many-statements
             num_skipped += 1
             continue
         # Add all sensor parameters to this frame.
-        frame.update(sensor_dict[sensor_id])
+        frame |= sensor_dict[sensor_id]
 
         if camera.find("transform") is None:
             if verbose:

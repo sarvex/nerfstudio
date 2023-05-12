@@ -89,7 +89,7 @@ def _generate_completion(
         args = [sys.executable, str(path_or_entrypoint), "--tyro-print-completion", shell]
     elif isinstance(path_or_entrypoint, str):
         # Entry points.
-        target_name = "_" + path_or_entrypoint
+        target_name = f"_{path_or_entrypoint}"
         args = [path_or_entrypoint, "--tyro-print-completion", shell]
     else:
         assert_never(path_or_entrypoint)
@@ -134,9 +134,15 @@ def _get_deactivate_script(commands: List[str], shell: Optional[ShellType], add_
         # Install the universal script
         result_script = []
         for shell_type in typing_get_args(ShellType):
-            result_script.append(f'if [ -n "${shell_type.upper()}_VERSION" ]; then')
-            result_script.append(_get_deactivate_script(commands, shell_type, add_header=False))
-            result_script.append("fi")
+            result_script.extend(
+                (
+                    f'if [ -n "${shell_type.upper()}_VERSION" ]; then',
+                    _get_deactivate_script(
+                        commands, shell_type, add_header=False
+                    ),
+                    "fi",
+                )
+            )
         source_lines = "\n".join(result_script)
 
     elif shell == "zsh":
@@ -156,9 +162,15 @@ def _get_source_script(completions_dir: pathlib.Path, shell: Optional[ShellType]
         # Install the universal script
         result_script = []
         for shell_type in typing_get_args(ShellType):
-            result_script.append(f'if [ -n "${shell_type.upper()}_VERSION" ]; then')
-            result_script.append(_get_source_script(completions_dir, shell_type, add_header=False))
-            result_script.append("fi")
+            result_script.extend(
+                (
+                    f'if [ -n "${shell_type.upper()}_VERSION" ]; then',
+                    _get_source_script(
+                        completions_dir, shell_type, add_header=False
+                    ),
+                    "fi",
+                )
+            )
         source_lines = "\n".join(result_script)
 
     elif shell == "zsh":
@@ -316,9 +328,7 @@ def _generate_completions_files(
         )
 
     # Delete obsolete completion files.
-    for unexpected_path in set(p.absolute() for p in existing_completions) - set(
-        p.absolute() for p in completion_paths
-    ):
+    for unexpected_path in ({p.absolute() for p in existing_completions} - {p.absolute() for p in completion_paths}):
         if unexpected_path.is_dir():
             shutil.rmtree(unexpected_path)
         elif unexpected_path.exists():

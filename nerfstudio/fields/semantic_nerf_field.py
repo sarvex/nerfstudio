@@ -99,9 +99,7 @@ class SemanticNerfField(Field):
     ) -> Dict[FieldHeadNames, TensorType]:
         encoded_dir = self.direction_encoding(ray_samples.frustums.directions)
         mlp_out = self.mlp_head(torch.cat([encoded_dir, density_embedding], dim=-1))  # type: ignore
-        outputs = {}
-        # rgb
-        outputs[self.field_head_rgb.field_head_name] = self.field_head_rgb(mlp_out)
+        outputs = {self.field_head_rgb.field_head_name: self.field_head_rgb(mlp_out)}
         # semantic
         mlp_out_sem = self.mlp_semantic(mlp_out)
         outputs[self.field_head_semantic.field_head_name] = self.field_head_semantic(mlp_out_sem)

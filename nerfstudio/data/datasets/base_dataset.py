@@ -94,8 +94,7 @@ class InputDataset(Dataset):
             image_idx: The image index in the dataset.
         """
         image = self.get_image(image_idx)
-        data = {"image_idx": image_idx}
-        data["image"] = image
+        data = {"image_idx": image_idx, "image": image}
         if self.has_masks:
             mask_filepath = self._dataparser_outputs.mask_filenames[image_idx]
             data["mask"] = get_image_mask_tensor_from_path(filepath=mask_filepath, scale_factor=self.scale_factor)
@@ -103,7 +102,7 @@ class InputDataset(Dataset):
                 data["mask"].shape[:2] == data["image"].shape[:2]
             ), f"Mask and image have different shapes. Got {data['mask'].shape[:2]} and {data['image'].shape[:2]}"
         metadata = self.get_metadata(data)
-        data.update(metadata)
+        data |= metadata
         return data
 
     # pylint: disable=no-self-use
@@ -117,8 +116,7 @@ class InputDataset(Dataset):
         return {}
 
     def __getitem__(self, image_idx: int) -> Dict:
-        data = self.get_data(image_idx)
-        return data
+        return self.get_data(image_idx)
 
     @property
     def image_filenames(self) -> List[Path]:

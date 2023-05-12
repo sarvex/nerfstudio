@@ -129,7 +129,6 @@ class VanillaNerfWField(Field):
         Returns:
             Dict[FieldHeadNames, TensorType]: Outputs of the NeRF-W field.
         """
-        outputs = {}
         encoded_dir = self.direction_encoding(ray_samples.frustums.directions)
         if ray_samples.camera_indices is None:
             raise AttributeError("Camera indices are not provided.")
@@ -137,7 +136,9 @@ class VanillaNerfWField(Field):
         embedded_appearance = self.embedding_appearance(camera_indices)
         mlp_in = torch.cat([density_embedding, encoded_dir, embedded_appearance], dim=-1)  # type: ignore
         mlp_head_out = self.mlp_head(mlp_in)
-        outputs[self.field_head_rgb.field_head_name] = self.field_head_rgb(mlp_head_out)  # static rgb
+        outputs = {
+            self.field_head_rgb.field_head_name: self.field_head_rgb(mlp_head_out)
+        }
         embedded_transient = self.embedding_transient(camera_indices)
         transient_mlp_in = torch.cat([density_embedding, embedded_transient], dim=-1)  # type: ignore
         transient_mlp_out = self.mlp_transient(transient_mlp_in)

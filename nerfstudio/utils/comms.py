@@ -25,16 +25,12 @@ def is_dist_avail_and_initialized() -> bool:
 
 def get_world_size() -> int:
     """Get total number of available gpus"""
-    if not is_dist_avail_and_initialized():
-        return 1
-    return dist.get_world_size()
+    return 1 if not is_dist_avail_and_initialized() else dist.get_world_size()
 
 
 def get_rank() -> int:
     """Get global rank of current thread"""
-    if not is_dist_avail_and_initialized():
-        return 0
-    return dist.get_rank()
+    return 0 if not is_dist_avail_and_initialized() else dist.get_rank()
 
 
 def get_local_rank() -> int:

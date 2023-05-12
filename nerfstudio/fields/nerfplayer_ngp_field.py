@@ -173,13 +173,11 @@ class NerfplayerNGPField(Field):
                 h = torch.cat([d, positions.view(-1, 3)], dim=-1)
             else:
                 h = torch.cat([d, density_embedding.view(-1, self.geo_feat_dim)], dim=-1)
+        elif density_embedding is None:
+            positions = SceneBox.get_normalized_positions(ray_samples.frustums.get_positions(), self.aabb)
+            h = positions.view(-1, 3)
         else:
-            # viewing direction is disabled
-            if density_embedding is None:
-                positions = SceneBox.get_normalized_positions(ray_samples.frustums.get_positions(), self.aabb)
-                h = positions.view(-1, 3)
-            else:
-                h = density_embedding.view(-1, self.geo_feat_dim)
+            h = density_embedding.view(-1, self.geo_feat_dim)
 
         if self.use_appearance_embedding:
             if ray_samples.camera_indices is None:

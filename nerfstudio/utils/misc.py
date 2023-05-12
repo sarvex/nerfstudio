@@ -32,14 +32,9 @@ def get_dict_to_torch(stuff: Any, device: Union[torch.device, str] = "cpu", excl
     """
     if isinstance(stuff, dict):
         for k, v in stuff.items():
-            if exclude and k in exclude:
-                stuff[k] = v
-            else:
-                stuff[k] = get_dict_to_torch(v, device)
+            stuff[k] = v if exclude and k in exclude else get_dict_to_torch(v, device)
         return stuff
-    if isinstance(stuff, torch.Tensor):
-        return stuff.to(device)
-    return stuff
+    return stuff.to(device) if isinstance(stuff, torch.Tensor) else stuff
 
 
 def get_dict_to_cpu(stuff: Any):
@@ -52,9 +47,7 @@ def get_dict_to_cpu(stuff: Any):
         for k, v in stuff.items():
             stuff[k] = get_dict_to_cpu(v)
         return stuff
-    if isinstance(stuff, torch.Tensor):
-        return stuff.detach().cpu()
-    return stuff
+    return stuff.detach().cpu() if isinstance(stuff, torch.Tensor) else stuff
 
 
 def get_masked_dict(d, mask):
@@ -65,10 +58,7 @@ def get_masked_dict(d, mask):
         d: dict to process
         mask: mask to apply to values in dictionary
     """
-    masked_dict = {}
-    for key, value in d.items():
-        masked_dict[key] = value[mask]
-    return masked_dict
+    return {key: value[mask] for key, value in d.items()}
 
 
 class IterableWrapper:  # pylint: disable=too-few-public-methods

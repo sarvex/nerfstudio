@@ -224,9 +224,7 @@ class StableDiffusion(nn.Module):
 
         if grad_scaler is not None:
             latents = grad_scaler.scale(latents)
-        loss = _SDSGradient.apply(latents, grad)
-
-        return loss
+        return _SDSGradient.apply(latents, grad)
 
     def produce_latents(
         self,
@@ -303,9 +301,7 @@ class StableDiffusion(nn.Module):
         imgs = 2 * imgs - 1
 
         posterior = self.auto_encoder.encode(imgs).latent_dist
-        latents = posterior.sample() * CONST_SCALE
-
-        return latents
+        return posterior.sample() * CONST_SCALE
 
     def prompt_to_img(
         self,

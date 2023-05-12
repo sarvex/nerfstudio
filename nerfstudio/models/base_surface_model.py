@@ -153,7 +153,7 @@ class SurfaceModel(Model):
         # renderers
         background_color = (
             get_color(self.config.background_color)
-            if self.config.background_color in set(["white", "black"])
+            if self.config.background_color in {"white", "black"}
             else self.config.background_color
         )
         self.renderer_rgb = RGBRenderer(background_color=background_color)
@@ -172,8 +172,7 @@ class SurfaceModel(Model):
         self.lpips = LearnedPerceptualImagePatchSimilarity()
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
-        param_groups = {}
-        param_groups["fields"] = list(self.field.parameters())
+        param_groups = {"fields": list(self.field.parameters())}
         if self.config.background_model != "none":
             param_groups["field_background"] = list(self.field_background.parameters())
         else:
@@ -253,13 +252,11 @@ class SurfaceModel(Model):
             "weights": weights,
             # used to scale z_vals for free space and sdf loss
             "directions_norm": ray_bundle.metadata["directions_norm"],
-        }
-        outputs.update(bg_outputs)
-
+        } | bg_outputs
         if self.training:
             grad_points = field_outputs[FieldHeadNames.GRADIENT]
-            outputs.update({"eik_grad": grad_points})
-            outputs.update(samples_and_field_outputs)
+            outputs["eik_grad"] = grad_points
+            outputs |= samples_and_field_outputs
 
         if "weights_list" in samples_and_field_outputs:
             weights_list = samples_and_field_outputs["weights_list"]
@@ -281,9 +278,8 @@ class SurfaceModel(Model):
             batch: ground truth batch corresponding to outputs
             metrics_dict: dictionary of metrics, some of which we can use for loss
         """
-        loss_dict = {}
         image = batch["image"].to(self.device)
-        loss_dict["rgb_loss"] = self.rgb_loss(image, outputs["rgb"])
+        loss_dict = {"rgb_loss": self.rgb_loss(image, outputs["rgb"])}
         if self.training:
             # eikonal loss
             grad_theta = outputs["eik_grad"]
@@ -325,10 +321,8 @@ class SurfaceModel(Model):
             outputs: the output to compute loss dict to
             batch: ground truth batch corresponding to outputs
         """
-        metrics_dict = {}
         image = batch["image"].to(self.device)
-        metrics_dict["psnr"] = self.psnr(outputs["rgb"], image)
-        return metrics_dict
+        return {"psnr": self.psnr(outputs["rgb"], image)}
 
     def get_image_metrics_and_images(
         self, outputs: Dict[str, torch.Tensor], batch: Dict[str, torch.Tensor]

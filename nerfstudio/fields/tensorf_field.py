@@ -105,12 +105,10 @@ class TensoRFField(Field):
         if self.use_sh:
             sh_mult = self.sh(d)[:, :, None]
             rgb_sh = rgb_features.view(sh_mult.shape[0], sh_mult.shape[1], 3, sh_mult.shape[-1])
-            rgb = torch.relu(torch.sum(sh_mult * rgb_sh, dim=-1) + 0.5)
+            return torch.relu(torch.sum(sh_mult * rgb_sh, dim=-1) + 0.5)
         else:
             out = self.mlp_head(torch.cat([rgb_features, d, rgb_features_encoded, d_encoded], dim=-1))  # type: ignore
-            rgb = self.field_output_rgb(out)
-
-        return rgb
+            return self.field_output_rgb(out)
 
     def forward(
         self,
@@ -119,7 +117,7 @@ class TensoRFField(Field):
         mask: Optional[TensorType] = None,
         bg_color: Optional[TensorType] = None,
     ) -> Dict[FieldHeadNames, TensorType]:
-        if compute_normals is True:
+        if compute_normals:
             raise ValueError("Surface normals are not currently supported with TensoRF")
         if mask is not None and bg_color is not None:
             base_density = torch.zeros(ray_samples.shape)[:, :, None].to(mask.device)

@@ -279,7 +279,7 @@ class PhototourismDownload(DatasetDownload):
         os.system(f"curl -L {url} > {download_path}")
 
         with tarfile.open(download_path, "r:gz") as tar_ref:
-            tar_ref.extractall(str(tmp_path))
+            tar_ref.extractall(tmp_path)
 
         inner_folders = os.listdir(tmp_path)
         assert len(inner_folders) == 1, "There is more than one folder inside this zip file."
@@ -342,10 +342,10 @@ class SDFstudioDemoDownload(DatasetDownload):
         os.system(f"curl -L {url} > {download_path}")
         if file_format == ".tar":
             with tarfile.open(download_path, "r") as tar_ref:
-                tar_ref.extractall(str(tmp_path))
+                tar_ref.extractall(tmp_path)
         elif file_format == ".zip":
             with zipfile.ZipFile(download_path, "r") as zip_ref:
-                zip_ref.extractall(str(target_path))
+                zip_ref.extractall(target_path)
             return
         else:
             raise NotImplementedError

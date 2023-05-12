@@ -174,7 +174,7 @@ class RFFEncoding(Encoding):
         super().__init__(in_dim)
 
         self.num_frequencies = num_frequencies
-        if not scale > 0:
+        if scale <= 0:
             raise ValueError("RFF encoding scale should be greater than zero")
         self.scale = scale
         if self.in_dim is None:
@@ -618,8 +618,7 @@ class KPlanesEncoding(Encoding):
     def get_out_dim(self) -> int:
         return self.num_components
 
-    def forward(self, in_tensor: TensorType["bs":..., "input_dim"]) -> TensorType["bs":..., "output_dim"]:
-        """Sample features from this encoder. Expects ``in_tensor`` to be in range [-1, 1]"""
+    def forward(self, in_tensor: TensorType["bs":..., "input_dim"]) -> TensorType["bs":..., "output_dim"]:    ..., "output_dim"
         original_shape = in_tensor.shape
 
         output = 1.0 if self.reduce == "product" else 0.0  # identity for corresponding op
@@ -630,11 +629,7 @@ class KPlanesEncoding(Encoding):
                 grid, coords, align_corners=True, padding_mode="border"
             )  # [1, output_dim, 1, flattened_bs]
             interp = interp.view(self.num_components, -1).T  # [flattened_bs, output_dim]
-            if self.reduce == "product":
-                output = output * interp
-            else:
-                output = output + interp
-
+            output = output * interp if self.reduce == "product" else output + interp
         return output.reshape(*original_shape[:-1], self.num_components)
 
 

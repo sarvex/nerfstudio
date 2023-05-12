@@ -115,15 +115,13 @@ class SpacedSampler(Sampler):
         spacing_to_euclidean_fn = lambda x: self.spacing_fn_inv(x * s_far + (1 - x) * s_near)
         euclidean_bins = spacing_to_euclidean_fn(bins)  # [num_rays, num_samples+1]
 
-        ray_samples = ray_bundle.get_ray_samples(
+        return ray_bundle.get_ray_samples(
             bin_starts=euclidean_bins[..., :-1, None],
             bin_ends=euclidean_bins[..., 1:, None],
             spacing_starts=bins[..., :-1, None],
             spacing_ends=bins[..., 1:, None],
             spacing_to_euclidean_fn=spacing_to_euclidean_fn,
         )
-
-        return ray_samples
 
 
 class UniformSampler(SpacedSampler):
@@ -728,9 +726,7 @@ class NeuSSampler(Sampler):
         next_esti_sdf = mid_sdf + cos_val * dist * 0.5
         prev_cdf = torch.sigmoid(prev_esti_sdf * inv_s)
         next_cdf = torch.sigmoid(next_esti_sdf * inv_s)
-        alpha = (prev_cdf - next_cdf + 1e-5) / (prev_cdf + 1e-5)
-
-        return alpha
+        return (prev_cdf - next_cdf + 1e-5) / (prev_cdf + 1e-5)
 
     @staticmethod
     def merge_ray_samples(ray_bundle: RayBundle, ray_samples_1: RaySamples, ray_samples_2: RaySamples):

@@ -38,6 +38,4 @@ def run_command(cmd: str, verbose=False) -> Optional[str]:
         CONSOLE.rule(style="red")
         CONSOLE.print(out.stderr.decode("utf-8"))
         sys.exit(1)
-    if out.stdout is not None:
-        return out.stdout.decode("utf-8")
-    return out
+    return out.stdout.decode("utf-8") if out.stdout is not None else out

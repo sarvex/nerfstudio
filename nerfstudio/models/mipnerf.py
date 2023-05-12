@@ -89,11 +89,9 @@ class MipNerfModel(Model):
         self.lpips = LearnedPerceptualImagePatchSimilarity(normalize=True)
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
-        param_groups = {}
         if self.field is None:
             raise ValueError("populate_fields() must be called before get_param_groups")
-        param_groups["fields"] = list(self.field.parameters())
-        return param_groups
+        return {"fields": list(self.field.parameters())}
 
     def get_outputs(self, ray_bundle: RayBundle):
 
@@ -126,7 +124,7 @@ class MipNerfModel(Model):
         accumulation_fine = self.renderer_accumulation(weights_fine)
         depth_fine = self.renderer_depth(weights_fine, ray_samples_pdf)
 
-        outputs = {
+        return {
             "rgb_coarse": rgb_coarse,
             "rgb_fine": rgb_fine,
             "accumulation_coarse": accumulation_coarse,
@@ -134,7 +132,6 @@ class MipNerfModel(Model):
             "depth_coarse": depth_coarse,
             "depth_fine": depth_fine,
         }
-        return outputs
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
         image = batch["image"].to(self.device)

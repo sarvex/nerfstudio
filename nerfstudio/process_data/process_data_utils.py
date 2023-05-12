@@ -57,8 +57,9 @@ def list_images(data: Path) -> List[Path]:
         Paths to images contained in the directory
     """
     allowed_exts = [".jpg", ".jpeg", ".png", ".tif", ".tiff"]
-    image_paths = sorted([p for p in data.glob("[!.]*") if p.suffix.lower() in allowed_exts])
-    return image_paths
+    return sorted(
+        [p for p in data.glob("[!.]*") if p.suffix.lower() in allowed_exts]
+    )
 
 
 def get_image_filenames(directory: Path, max_num_images: int = -1) -> Tuple[List[Path], int]:
@@ -169,9 +170,10 @@ def convert_video_to_images(
         run_command(ffmpeg_cmd, verbose=verbose)
 
     num_final_frames = len(list(image_dir.glob("*.png")))
-    summary_log = []
-    summary_log.append(f"Starting with {num_frames} video frames")
-    summary_log.append(f"We extracted {num_final_frames} images")
+    summary_log = [
+        f"Starting with {num_frames} video frames",
+        f"We extracted {num_final_frames} images",
+    ]
     CONSOLE.log("[bold green]:tada: Done converting video to images.")
 
     return summary_log, num_final_frames
@@ -486,9 +488,7 @@ def generate_mask(
     circle_mask = generate_circle_mask(height, width, percent_radius)
     if crop_mask is None:
         return circle_mask
-    if circle_mask is None:
-        return crop_mask
-    return crop_mask * circle_mask
+    return crop_mask if circle_mask is None else crop_mask * circle_mask
 
 
 def save_mask(

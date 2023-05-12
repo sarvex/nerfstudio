@@ -41,10 +41,7 @@ class Path:
         """
         new_path = self.entries
         for element in other.split("/"):
-            if len(element) == 0:
-                new_path = tuple()
-            else:
-                new_path = new_path + (element,)
+            new_path = tuple() if len(element) == 0 else new_path + (element,)
         return Path(new_path)
 
     def lower(self):

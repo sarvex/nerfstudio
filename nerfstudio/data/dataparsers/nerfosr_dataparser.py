@@ -57,7 +57,7 @@ def _find_files(directory: str, exts: List[str]):
         files_grabbed = []
         for ext in exts:
             files_grabbed.extend(glob.glob(os.path.join(directory, ext)))
-        if len(files_grabbed) > 0:
+        if files_grabbed:
             files_grabbed = sorted(files_grabbed)
         return files_grabbed
     return []
@@ -226,11 +226,10 @@ class NeRFOSR(DataParser):
         if self.config.use_masks:
             mask_filenames = _find_files(f"{split_dir}/mask", exts=["*.png", "*.jpg", "*.JPG", "*.PNG"])
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
             mask_filenames=mask_filenames if len(mask_filenames) > 0 else None,
             dataparser_scale=self.config.scale_factor,
         )
-        return dataparser_outputs

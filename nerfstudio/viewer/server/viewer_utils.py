@@ -42,8 +42,7 @@ CONSOLE = Console(width=120)
 def get_viewer_version() -> str:
     """Return the version of the viewer."""
     json_filename = os.path.join(os.path.dirname(__file__), "../app/package.json")
-    version = load_from_json(Path(json_filename))["version"]
-    return version
+    return load_from_json(Path(json_filename))["version"]
 
 
 def get_viewer_url(websocket_port: int) -> str:
@@ -116,13 +115,11 @@ def get_free_port(default_port: Optional[int] = None):
     Returns:
         A free port on the local machine.
     """
-    if default_port is not None:
-        if is_port_open(default_port):
-            return default_port
+    if default_port is not None and is_port_open(default_port):
+        return default_port
     sock = socket.socket()
     sock.bind(("", 0))
-    port = sock.getsockname()[1]
-    return port
+    return sock.getsockname()[1]
 
 
 def update_render_aabb(

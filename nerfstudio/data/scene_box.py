@@ -35,8 +35,7 @@ class SceneBox:
     def get_diagonal_length(self):
         """Returns the longest diagonal length."""
         diff = self.aabb[1] - self.aabb[0]
-        length = torch.sqrt((diff**2).sum() + 1e-20)
-        return length
+        return torch.sqrt((diff**2).sum() + 1e-20)
 
     def get_center(self):
         """Returns the center of the box."""
@@ -61,8 +60,7 @@ class SceneBox:
             aabb: the axis-aligned bounding box
         """
         aabb_lengths = aabb[1] - aabb[0]
-        normalized_positions = (positions - aabb[0]) / aabb_lengths
-        return normalized_positions
+        return (positions - aabb[0]) / aabb_lengths
 
     @staticmethod
     def from_camera_poses(poses: TensorType[..., 3, 4], scale_factor: float) -> "SceneBox":

@@ -181,12 +181,10 @@ class Phototourism(DataParser):
 
         assert len(cameras) == len(image_filenames)
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
             dataparser_scale=scale_factor,
             dataparser_transform=transform_matrix,
         )
-
-        return dataparser_outputs

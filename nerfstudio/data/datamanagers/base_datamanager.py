@@ -546,7 +546,7 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
     def get_datapath(self) -> Path:
         return self.config.dataparser.data
 
-    def get_param_groups(self) -> Dict[str, List[Parameter]]:  # pylint: disable=no-self-use
+    def get_param_groups(self) -> Dict[str, List[Parameter]]:    # pylint: disable=no-self-use
         """Get the param groups for the data manager.
         Returns:
             A list of dictionaries containing the data manager's param groups.
@@ -555,9 +555,9 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
 
         camera_opt_params = list(self.train_camera_optimizer.parameters())
         if self.config.camera_optimizer.mode != "off":
-            assert len(camera_opt_params) > 0
+            assert camera_opt_params
             param_groups[self.config.camera_optimizer.param_group] = camera_opt_params
         else:
-            assert len(camera_opt_params) == 0
+            assert not camera_opt_params
 
         return param_groups

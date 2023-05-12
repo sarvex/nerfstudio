@@ -76,12 +76,11 @@ class MultiStepScheduler(Scheduler):
     config: MultiStepSchedulerConfig
 
     def get_scheduler(self, optimizer: Optimizer, lr_init: float) -> lr_scheduler._LRScheduler:
-        scheduler = lr_scheduler.MultiStepLR(
+        return lr_scheduler.MultiStepLR(
             optimizer=optimizer,
             milestones=self.config.milestones,
             gamma=self.config.gamma,
         )
-        return scheduler
 
 
 @dataclass
@@ -110,11 +109,7 @@ class ExponentialDecayScheduler(Scheduler):
     config: ExponentialDecaySchedulerConfig
 
     def get_scheduler(self, optimizer: Optimizer, lr_init: float) -> lr_scheduler._LRScheduler:
-        if self.config.lr_final is None:
-            lr_final = lr_init
-        else:
-            lr_final = self.config.lr_final
-
+        lr_final = lr_init if self.config.lr_final is None else self.config.lr_final
         def func(step):
             if step < self.config.warmup_steps:
                 if self.config.ramp == "cosine":

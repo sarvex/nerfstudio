@@ -104,15 +104,15 @@ class ARKitScenes(DataParser):
         frame_ids = [x.split(".png")[0].split("_")[1] for x in frame_ids]
         frame_ids.sort()
 
-        poses_from_traj = {}
         with open(pose_file, "r", encoding="utf-8") as f:
             traj = f.readlines()
 
-        for line in traj:
-            poses_from_traj[f"{round(float(line.split(' ')[0]), 3):.3f}"] = np.array(
+        poses_from_traj = {
+            f"{round(float(line.split(' ')[0]), 3):.3f}": np.array(
                 traj_string_to_matrix(line)[1].tolist()
             )
-
+            for line in traj
+        }
         image_filenames, depth_filenames, intrinsics, poses = [], [], [], []
         w, h, _, _, _, _ = np.loadtxt(list(sorted(intrinsics_dir.iterdir()))[0])  # Get image size from first intrinsic
 
@@ -161,7 +161,9 @@ class ARKitScenes(DataParser):
 
         # Choose image_filenames and poses based on split, but after auto orient and scaling the poses.
         image_filenames = [image_filenames[i] for i in indices]
-        depth_filenames = [depth_filenames[i] for i in indices] if len(depth_filenames) > 0 else []
+        depth_filenames = (
+            [depth_filenames[i] for i in indices] if depth_filenames else []
+        )
         intrinsics = intrinsics[indices.tolist()]
         poses = poses[indices.tolist()]
 
@@ -185,18 +187,17 @@ class ARKitScenes(DataParser):
             camera_type=CameraType.PERSPECTIVE,
         )
 
-        dataparser_outputs = DataparserOutputs(
+        return DataparserOutputs(
             image_filenames=image_filenames,
             cameras=cameras,
             scene_box=scene_box,
             dataparser_scale=scale_factor,
             dataparser_transform=transform_matrix,
             metadata={
-                "depth_filenames": depth_filenames if len(depth_filenames) > 0 else None,
+                "depth_filenames": depth_filenames if depth_filenames else None,
                 "depth_unit_scale_factor": self.config.depth_unit_scale_factor,
             },
         )
-        return dataparser_outputs
 
     @staticmethod
     def _get_intrinsic(intrinsics_dir: Path, frame_id: str, video_id: str):
@@ -209,13 +210,12 @@ class ARKitScenes(DataParser):
             intrinsic_fn = intrinsics_dir / f"{video_id}_{float(frame_id) + 0.001:.3f}.pincam"
 
         _, _, fx, fy, hw, hh = np.loadtxt(intrinsic_fn)
-        intrinsic = np.asarray([[fx, 0, hw], [0, fy, hh], [0, 0, 1]])
-        return intrinsic
+        return np.asarray([[fx, 0, hw], [0, fy, hh], [0, 0, 1]])
 
     @staticmethod
     def _get_pose(frame_id: str, poses_from_traj: dict):
-        if str(frame_id) in poses_from_traj:
-            frame_pose = np.array(poses_from_traj[str(frame_id)])
+        if frame_id in poses_from_traj:
+            frame_pose = np.array(poses_from_traj[frame_id])
         else:
             for my_key in poses_from_traj:
                 if abs(float(frame_id) - float(my_key)) < 0.005:

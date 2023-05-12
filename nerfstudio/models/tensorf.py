@@ -243,13 +243,14 @@ class TensoRFModel(Model):
             self.collider = AABBBoxCollider(scene_box=self.scene_box)
 
     def get_param_groups(self) -> Dict[str, List[Parameter]]:
-        param_groups = {}
+        param_groups = {
+            "fields": (
+                list(self.field.mlp_head.parameters())
+                + list(self.field.B.parameters())
+                + list(self.field.field_output_rgb.parameters())
+            )
+        }
 
-        param_groups["fields"] = (
-            list(self.field.mlp_head.parameters())
-            + list(self.field.B.parameters())
-            + list(self.field.field_output_rgb.parameters())
-        )
         param_groups["encodings"] = list(self.field.color_encoding.parameters()) + list(
             self.field.density_encoding.parameters()
         )
@@ -285,8 +286,7 @@ class TensoRFModel(Model):
         rgb = torch.where(accumulation < 0, colors.WHITE.to(rgb.device), rgb)
         accumulation = torch.clamp(accumulation, min=0)
 
-        outputs = {"rgb": rgb, "accumulation": accumulation, "depth": depth}
-        return outputs
+        return {"rgb": rgb, "accumulation": accumulation, "depth": depth}
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None) -> Dict[str, torch.Tensor]:
         # Scaling metrics by coefficients to create the losses.

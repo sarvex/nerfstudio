@@ -42,10 +42,7 @@ def get_tree(node_class: Callable) -> Callable:
 
 
 def find_node(tree, path):
-    if len(path) == 0:
-        return tree
-    else:
-        return find_node(tree[path[0]], path[1:])
+    return tree if len(path) == 0 else find_node(tree[path[0]], path[1:])
 
 
 def set_node_value(tree, path, value):
@@ -62,4 +59,4 @@ def walk(path, tree):
     """
     yield path, tree
     for k, v in tree.items():
-        yield from walk(path + "/" + k, v)
+        yield from walk(f"{path}/{k}", v)

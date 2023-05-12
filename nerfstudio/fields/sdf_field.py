@@ -198,7 +198,7 @@ class SDFField(Field):
 
             if self.config.weight_norm:
                 lin = nn.utils.weight_norm(lin)
-            setattr(self, "clin" + str(l), lin)
+            setattr(self, f"clin{str(l)}", lin)
 
         self.softplus = nn.Softplus(beta=100)
         self.relu = nn.ReLU()
@@ -218,11 +218,7 @@ class SDFField(Field):
         self.skip_in = [4]
 
         for l in range(0, self.num_layers - 1):
-            if l + 1 in self.skip_in:
-                out_dim = dims[l + 1] - dims[0]
-            else:
-                out_dim = dims[l + 1]
-
+            out_dim = dims[l + 1] - dims[0] if l + 1 in self.skip_in else dims[l + 1]
             lin = nn.Linear(dims[l], out_dim)
 
             if self.config.geometric_init:
@@ -247,7 +243,7 @@ class SDFField(Field):
 
             if self.config.weight_norm:
                 lin = nn.utils.weight_norm(lin)
-            setattr(self, "glin" + str(l), lin)
+            setattr(self, f"glin{str(l)}", lin)
 
     def set_cos_anneal_ratio(self, anneal: float) -> None:
         """Set the anneal value for the proposal network."""
@@ -271,7 +267,7 @@ class SDFField(Field):
         outputs = inputs
 
         for l in range(0, self.num_layers - 1):
-            lin = getattr(self, "glin" + str(l))
+            lin = getattr(self, f"glin{str(l)}")
 
             if l in self.skip_in:
                 outputs = torch.cat([outputs, inputs], 1) / np.sqrt(2)
@@ -336,9 +332,7 @@ class SDFField(Field):
         p = prev_cdf - next_cdf
         c = prev_cdf
 
-        alpha = ((p + 1e-5) / (c + 1e-5)).clip(0.0, 1.0)
-
-        return alpha
+        return ((p + 1e-5) / (c + 1e-5)).clip(0.0, 1.0)
 
     def get_density(self, ray_samples: RaySamples):
         raise NotImplementedError
@@ -360,15 +354,14 @@ class SDFField(Field):
             # set it to zero if don't use it
             if not self.config.use_appearance_embedding:
                 embedded_appearance = torch.zeros_like(embedded_appearance)
+        elif self.use_average_appearance_embedding:
+            embedded_appearance = torch.ones(
+                (*directions.shape[:-1], self.config.appearance_embedding_dim), device=directions.device
+            ) * self.embedding_appearance.mean(dim=0)
         else:
-            if self.use_average_appearance_embedding:
-                embedded_appearance = torch.ones(
-                    (*directions.shape[:-1], self.config.appearance_embedding_dim), device=directions.device
-                ) * self.embedding_appearance.mean(dim=0)
-            else:
-                embedded_appearance = torch.zeros(
-                    (*directions.shape[:-1], self.config.appearance_embedding_dim), device=directions.device
-                )
+            embedded_appearance = torch.zeros(
+                (*directions.shape[:-1], self.config.appearance_embedding_dim), device=directions.device
+            )
 
         hidden_input = torch.cat(
             [
@@ -382,16 +375,14 @@ class SDFField(Field):
         )
 
         for layer in range(0, self.num_layers_color - 1):
-            lin = getattr(self, "clin" + str(layer))
+            lin = getattr(self, f"clin{str(layer)}")
 
             hidden_input = lin(hidden_input)
 
             if layer < self.num_layers_color - 2:
                 hidden_input = self.relu(hidden_input)
 
-        rgb = self.sigmoid(hidden_input)
-
-        return rgb
+        return self.sigmoid(hidden_input)
 
     def get_outputs(
         self,
@@ -429,18 +420,16 @@ class SDFField(Field):
         gradients = gradients.view(*ray_samples.frustums.directions.shape[:-1], -1)
         normals = torch.nn.functional.normalize(gradients, p=2, dim=-1)
 
-        outputs.update(
-            {
-                FieldHeadNames.RGB: rgb,
-                FieldHeadNames.SDF: sdf,
-                FieldHeadNames.NORMALS: normals,
-                FieldHeadNames.GRADIENT: gradients,
-            }
-        )
+        outputs |= {
+            FieldHeadNames.RGB: rgb,
+            FieldHeadNames.SDF: sdf,
+            FieldHeadNames.NORMALS: normals,
+            FieldHeadNames.GRADIENT: gradients,
+        }
 
         if return_alphas:
             alphas = self.get_alpha(ray_samples, sdf, gradients)
-            outputs.update({FieldHeadNames.ALPHA: alphas})
+            outputs[FieldHeadNames.ALPHA] = alphas
 
         return outputs
 
@@ -454,5 +443,4 @@ class SDFField(Field):
             compute normals: not currently used in this implementation.
             return_alphas: Whether to return alpha values
         """
-        field_outputs = self.get_outputs(ray_samples, return_alphas=return_alphas)
-        return field_outputs
+        return self.get_outputs(ray_samples, return_alphas=return_alphas)
